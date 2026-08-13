@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#07130c">
+<meta name="description" content="NARCOS EMPIRE — drug empire idle. Run your cartel, hire sicarios, package product in grams to kilos, mini games, contracts, skins, chat and a live global cartel board.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NARCOS">
+<title>NARCOS EMPIRE 💵 | Drug Empire Idle</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💵</text></svg>">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="style.css?v=20260812a">
+</head>
+<body data-view="grow">
+
+<canvas id="space"></canvas>
+<div class="nebula neb1"></div>
+<div class="nebula neb2"></div>
+
+<!-- ======= TOP BAR ======= -->
+<header id="topbar">
+  <div class="logo" onclick="openNameModal()">💵 <span>NARCOS</span><b>EMPIRE</b><em>drug empire idle</em></div>
+  <div class="hud">
+    <button class="chip name-chip" id="btnName" onclick="openNameModal()">
+      <span class="chip-emoji" id="hudAvatar">💵</span><span id="hudName">BOSS</span>
+      <span class="lv-pill" id="hudLevel">Lv1</span>
+    </button>
+    <button class="chip" title="Crystals" onclick="setView('grow');switchGrowTab('shop')">
+      <span class="chip-emoji">💎</span><span id="hudCrystals">0</span>
+    </button>
+    <button class="chip" title="Connections (Rebuild)" onclick="setView('grow');switchGrowTab('ascend')">
+      <span class="chip-emoji">🗝️</span><span id="hudSeeds">0</span>
+    </button>
+    <button class="chip" id="hudCrates" title="Crates to open" onclick="setView('quests')">
+      <span class="chip-emoji">📦</span><span id="hudCrateN">0</span>
+    </button>
+    <button class="chip icon-only" id="btnSound" onclick="toggleSound()" title="Sound">🔊</button>
+    <button class="chip icon-only" id="btnSettings" onclick="setView('more')" title="Settings">⚙️</button>
+  </div>
+</header>
+
+<!-- ======= SIDEBAR NAV (desktop) ======= -->
+<nav id="sidebar">
+  <button data-view="grow" class="on" onclick="setView('grow')">💵<span>Empire</span></button>
+  <button data-view="mini" onclick="setView('mini')">🕹️<span>Mini Games</span></button>
+  <button data-view="quests" onclick="setView('quests')">🎯<span>Contracts</span></button>
+  <button data-view="board" onclick="setView('board')">🏆<span>Cartel Board</span></button>
+  <button data-view="chat" onclick="setView('chat')">💬<span>Chat</span></button>
+  <button data-view="more" onclick="setView('more')">📖<span>Help</span></button>
+</nav>
+
+<!-- ======= MAIN ======= -->
+<main>
+
+  <!-- ===== GROW ===== -->
+  <section id="view-grow" class="view">
+    <div class="event-banner hidden" id="eventBanner" onclick="collectEventReward()">
+      <span id="eventText">EVENT!</span><span id="eventTimer"></span>
+    </div>
+
+    <div class="melon-stage">
+      <div class="boost-pill" id="boostPill" style="display:none"></div>
+      <button id="melonBtn" aria-label="Tap the product brick">
+                <svg id="melonSvg" viewBox="0 0 120 120" width="100%" height="100%">
+          <defs>
+            <linearGradient id="rindG" x1="0" y1="0" x2="0.7" y2="1">
+              <stop offset="0" stop-color="var(--r1)"/>
+              <stop offset="0.55" stop-color="var(--r2)"/>
+              <stop offset="1" stop-color="var(--r3)"/>
+            </linearGradient>
+            <radialGradient id="shineG" cx="0.32" cy="0.22" r="0.9">
+              <stop offset="0" stop-color="#ffffff" stop-opacity="0.5"/>
+              <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.08"/>
+              <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="stripG" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="var(--s1)"/>
+              <stop offset="1" stop-color="var(--s2)"/>
+            </linearGradient>
+          </defs>
+          <rect x="22" y="26" width="76" height="68" rx="14" fill="url(#rindG)" stroke="#ffffff" stroke-opacity="0.25" stroke-width="2.5"/>
+          <path d="M22 46 h80 a12 12 0 0 1 4 1 v14 a14 14 0 0 0 -84 0 v-14 a12 12 0 0 1 4 -1z" fill="url(#stripG)" opacity="0.9"/>
+          <text x="60" y="76" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="40" font-weight="900" fill="#ffe9a0" stroke="#5a3a00" stroke-width="1.4">$</text>
+          <ellipse cx="60" cy="66" rx="52" ry="48" fill="url(#shineG)"/>
+        </svg>
+      </button>
+      <div class="combo" id="comboWrap" style="opacity:0">
+        <span>COMBO</span><b id="comboCount">×1</b>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="big-number" id="melonCount">0</div>
+      <div class="substats">
+        <span class="substat">⚡ <b id="perSec">0</b>/s</span>
+        <span class="substat">👆 <b id="perClick">1</b>/tap</span>
+      </div>
+    </div>
+
+    <nav class="center-tabs" id="growTabs">
+      <button data-tab="farm" class="on">🧺 Operations</button>
+      <button data-tab="cartel">🏴 Cartel</button>
+      <button data-tab="upgrades">🔧 Upgrades</button>
+      <button data-tab="ascend">⭐ Rebuild</button>
+      <button data-tab="shop">💎 Shop</button>
+    </nav>
+
+    <div class="tab-panels">
+      <div id="tab-farm" class="tab on">
+        <div class="panel-head">
+          <h2>🧺 Cartel Operations</h2>
+          <div class="seg" id="buyToggle">
+            <button data-n="1" class="on">×1</button>
+            <button data-n="10">×10</button>
+            <button data-n="25">×25</button>
+            <button data-n="100">×100</button>
+          </div>
+        </div>
+        <div class="scroll-area" id="buildings"></div>
+      </div>
+      <div id="tab-cartel" class="tab"></div>
+      <div id="tab-upgrades" class="tab"></div>
+      <div id="tab-ascend" class="tab"></div>
+      <div id="tab-shop" class="tab"></div>
+    </div>
+  </section>
+
+  <!-- ===== MINI GAMES ===== -->
+  <section id="view-mini" class="view">
+    <div class="view-head">
+      <h2>🕹️ Mini Games</h2>
+      <p>Play for fun, earn product, connections &amp; rare drops. Rewards are boosted ×3 during <b>Product Rush</b> events!</p>
+    </div>
+    <nav class="center-tabs" id="miniTabs">
+      <button data-m="suika" class="on">🧪 Merge</button>
+      <button data-m="whack">🥷 Whack</button>
+      <button data-m="roulette">🎡 Roulette</button>
+      <button data-m="fishing">🚤 Smuggle</button>
+      <button data-m="balloon">🎈 Pop</button>
+    </nav>
+
+    <div id="mini-suika" class="mini on">
+      <div class="suika-hud">
+        <div class="sstat"><span>💯 Score</span><b id="score">0</b></div>
+        <div class="sstat"><span>🏆 Best</span><b id="best">0</b></div>
+        <div class="sstat sstat-next"><span>Next</span><span class="next-bubble"><canvas id="nextCanvas" width="100" height="100"></canvas></span></div>
+      </div>
+      <div class="suika-wrap">
+        <canvas id="suikaCanvas" width="440" height="640"></canvas>
+        <div class="suika-overlay" id="suikaStartOverlay">
+          <div class="suika-card suika-start-card">
+            <div class="suika-start-emoji">🧊</div>
+            <h3>Ready to Move Product?</h3>
+            <p>Drop product and merge two of the same to cook it bigger!</p>
+            <div class="suika-start-list">
+              <div>💡 Tap <b>Start</b> when you're ready — no accidental drops.</div>
+              <div>🎯 Aim by dragging your finger or moving the mouse, then give a quick tap to drop.</div>
+              <div>⚔️ Merge to the <b>Narco King 👑</b> for legendary drops!</div>
+            </div>
+            <button class="btn-primary" id="suikaStartBtn">▶ Start Game</button>
+          </div>
+        </div>
+        <div class="suika-overlay hidden" id="suikaOverlay">
+          <div class="suika-card">
+            <h3>Game Over!</h3>
+            <p>Score <b id="suikaFinal">0</b></p>
+            <p class="suika-reward" id="suikaReward"></p>
+            <p class="new-best" id="suikaNewBest" style="display:none">🏆 New Best!</p>
+            <div class="suika-stats" id="suikaStats"></div>
+            <button class="btn-primary" id="suikaRestart">Play Again</button>
+          </div>
+        </div>
+      </div>
+      <p class="game-hint">Desktop: move mouse to aim, quick click to drop · Mobile: drag to aim, quick tap to drop · Space / ↑↓ to aim &amp; drop</p>
+      <div class="chain-wrap"><span class="chain-label">Cook chain</span><div class="fruit-chain" id="fruitChain"></div></div>
+      <p class="mini-tip">💡 Every merge adds product to your empire. Make a Narco King for a legendary drop!</p>
+    </div>
+
+    <div id="mini-whack" class="mini">
+      <div class="whack-head">
+        <div class="sstat"><span>⏱️ Time</span><b id="whackTimer">15s</b></div>
+        <div class="sstat"><span>🥷 Score</span><b id="whackScore">0</b></div>
+        <button class="btn-primary" id="whackStart">Start!</button>
+      </div>
+      <div class="whack-grid" id="whackGrid"></div>
+      <p class="game-hint">Whack every cartel thug that pops up. Bosses ☠️ are worth ×5! Score becomes product + drops.</p>
+    </div>
+
+    <div id="mini-roulette" class="mini">
+      <div class="roulette-card">
+        <div class="roulette-wheel" id="rouletteWheel">
+          <div class="wheel-arrow"></div>
+        </div>
+        <div class="roulette-result" id="rouletteResult"></div>
+        <button class="btn-primary" id="rouletteSpin" onclick="spinRoulette()">🎡 Spin — 10 💎</button>
+        <p class="game-hint">Wheels of fortune! Win up to 100 💎 or double your next merge run. Your crystals balance updates live on the board.</p>
+      </div>
+    </div>
+
+    <div id="mini-fishing" class="mini">
+      <div class="fish-card">
+        <div class="fish-head">
+          <div class="fish-rod">
+            <div class="fish-rod-name" id="fishRodName">🛶 Raft</div>
+            <div class="fish-rod-next" id="fishRodNext"></div>
+          </div>
+          <button class="btn-ghost btn-sm" id="fishUpgradeBtn">⬆️ Upgrade</button>
+        </div>
+        <div class="fish-water">
+          <div class="fish-zone" id="fishZoneName">Waters: Shallows → Shallows 🌿</div>
+          <button class="fish-bobber" id="fishBobber" aria-label="bobber">📦</button>
+          <div class="fish-cast-hint">Send a drop, wait for the bite, then tap the bar when the marker is in the green!</div>
+        </div>
+        <div class="fish-reel hidden" id="fishTrack">
+          <div class="fish-sweet" id="fishSweet"></div>
+          <div class="fish-marker" id="fishMarker"></div>
+        </div>
+        <button class="btn-primary btn-block" id="fishCastBtn">📦 Send Drop</button>
+        <div class="fish-status" id="fishStatus">Ready to smuggle!</div>
+        <div class="fish-stats" id="fishStats">📦 0 hauls</div>
+        <button class="btn-ghost btn-sm" id="fishIndexBtn">📖 Open Haul Index</button>
+        <p class="game-hint">Upgrade boats to unlock deeper waters and rarer hauls. Every catch fills your index — 200+ finds to discover!</p>
+      </div>
+    </div>
+
+    <div id="mini-balloon" class="mini">
+      <div class="balloon-head">
+        <div class="sstat"><span>⏱️ Time</span><b id="balloonTimer">20s</b></div>
+        <div class="sstat"><span>🎈 Score</span><b id="balloonScore">0</b></div>
+        <button class="btn-primary" id="balloonStart">Start!</button>
+      </div>
+      <div class="balloon-area" id="balloonArea"></div>
+      <p class="game-hint">Pop the contraband balloons before they float away! Coke blocks 🧊 are worth ×5. Score becomes product + drops.</p>
+    </div>
+  </section>
+
+  <!-- ===== QUESTS ===== -->
+  <section id="view-quests" class="view">
+    <div class="view-head">
+      <h2>🎯 Contracts &amp; Collection</h2>
+      <p>Complete contracts for crystals &amp; XP, collect rare drops, and open crates. Locked items stay mysterious until found…</p>
+    </div>
+
+    <div class="quest-block">
+      <div class="daily-card" id="dailyCard">
+        <div class="daily-emoji">🎁</div>
+        <div>
+          <div class="daily-title">Daily Drop</div>
+          <div class="daily-sub" id="dailySub">Claim free crystals every day!</div>
+        </div>
+        <button id="dailyBtn" onclick="claimDaily()">CLAIM</button>
+      </div>
+    </div>
+
+    <div class="quest-block">
+      <h3>🗓️ Daily Contracts <span class="reset-in" id="questReset">reset in --</span></h3>
+      <div id="dailyQuests"></div>
+    </div>
+
+    <div class="quest-block">
+      <h3>🌟 Story Contracts</h3>
+      <div id="storyQuests"></div>
+    </div>
+
+    <div class="quest-block">
+      <h3>🎖️ Achievements</h3>
+      <div class="ach-grid" id="achGrid"></div>
+    </div>
+
+    <div class="quest-block">
+      <h3>📦 Inventory <button class="btn-ghost btn-sm" id="openCrateBtn" onclick="openCrate()">Open a crate (0)</button></h3>
+      <p class="quest-hint">Crates drop from clicking, buying, cash drops and mini games.</p>
+      <div id="invList"></div>
+    </div>
+
+    <div class="quest-block">
+      <h3>🗃️ Collection <span id="collCount" class="reset-in"></span></h3>
+      <div class="collection-grid" id="collectionGrid"></div>
+    </div>
+  </section>
+
+  <!-- ===== BOARD ===== -->
+  <section id="view-board" class="view">
+    <div class="view-head">
+      <h2>🏆 Global Cartel Board</h2>
+      <p>Live board — updated in real time from the shared underworld. Build your empire to climb the stack!</p>
+    </div>
+    <div class="rank-card" id="rankCard">
+      <div class="rank-icon" id="rankIcon">🐀</div>
+      <div class="rank-meta">
+        <div class="rank-title" id="rankTitle">Street Pusher</div>
+        <div class="rank-progress"><div class="rank-bar" id="rankBar"></div></div>
+        <div class="rank-next">next level: <b id="rankNext">Lv 2</b></div>
+      </div>
+    </div>
+    <div class="board-toolbar">
+      <button class="btn-ghost btn-sm" id="lbRefresh" onclick="Leaderboard.refresh()">Refresh ⟳</button>
+      <span class="lb-status" id="lbStatus">Loading…</span>
+    </div>
+    <div class="scroll-area lb-list" id="lbList">
+      <div class="lb-empty">Loading the underworld… 🌌</div>
+    </div>
+    <div class="quest-block">
+      <h3>⚙️ Settings</h3>
+      <p class="quest-hint">Start fresh: wipe all progress on this device <b>and</b> remove your score from the global board.</p>
+      <button class="btn-danger" onclick="resetGame()">🗑️ Reset All &amp; Clear My Score</button>
+      <div class="reset-note">Crystals, operations, contracts, collection and your board entry are removed — you'll begin as a brand-new street pusher.</div>
+      <div class="settings-divider"></div>
+      <h3>🌌 Global Board</h3>
+      <p class="quest-hint">Remove <b>every</b> cartel's score from the shared underworld. This affects everyone playing!</p>
+      <button class="btn-danger btn-sm" onclick="clearLeaderboard()">🌌 Clear Entire Leaderboard</button>
+      <div class="reset-note">Wipes the whole board in the cloud. Other bosses will re-appear as they come back online.</div>
+    </div>
+
+    <div class="quest-block raid-block">
+      <h3>🏴‍☠️ Raid Other Cartels</h3>
+      <p class="quest-hint">Every cartel's idle production slowly fills their guarded stash. Raid others to steal product — win by out-powering their defense!</p>
+      <div class="raid-stats">
+        <div><span>⚔️ Power</span><b id="raidPower">0</b></div>
+        <div><span>🛡️ Defense</span><b id="raidDef">0</b></div>
+        <div><span>🏴‍☠️ Stash</span><b id="raidStash">…</b></div>
+      </div>
+      <button class="btn-primary btn-block" id="raidBtn" onclick="PVP.raid()">⚔️ Raid a Cartel</button>
+      <div class="raid-result" id="raidResult">Ready to raid!</div>
+      <div class="reset-note">Your stash grows with 5% of your idle production. Raid cooldown: 1 min. Build your Cartel army &amp; arsenal for power; Bodyguards raise defense.</div>
+    </div>
+  </section>
+
+  <!-- ===== CHAT ===== -->
+  <section id="view-chat" class="view">
+    <div class="view-head">
+      <h2>💬 Cartel Chat</h2>
+      <p>Live chat for every cartel boss in the underworld. Keep it cool! 💊</p>
+    </div>
+    <div class="chat-status" id="chatStatus"></div>
+    <div class="chat-list" id="chatList">
+      <div class="lb-empty">Connecting to the underworld… 🌌</div>
+    </div>
+    <div class="chat-input-row">
+      <input id="chatInput" maxlength="120" placeholder="Say something cartel-y…" autocomplete="off">
+      <button id="chatSend" onclick="Chat.send()">Send</button>
+    </div>
+  </section>
+
+  <!-- ===== MORE / HELP ===== -->
+  <section id="view-more" class="view">
+    <div class="view-head">
+      <h2>📖 How to Play</h2>
+      <p>Everything you need to rule the drug empire.</p>
+    </div>
+
+    <div class="quest-block">
+      <h3>🚀 Quick Tutorial</h3>
+      <button class="btn-primary" onclick="openTutorial()">📖 Show New-Boss Tutorial</button>
+    </div>
+
+    <div class="help-grid">
+      <div class="help-card"><span class="step-num">01</span><h3>Tap to harvest</h3><p>Tap the big brick to package product. Tap power grows as you buy operations and upgrades. Hold to auto-tap!</p></div>
+      <div class="help-card"><span class="step-num">02</span><h3>Buy operations</h3><p>Operations move product every second — even while you're away. Buy ×1, ×10, ×25 or ×100 and double them with upgrades.</p></div>
+      <div class="help-card"><span class="step-num">03</span><h3>Rebuild (⭐)</h3><p>Reach massive hauls and Rebuild to earn 🗝️ Connections. Connections permanently boost ALL production. Use them for permanent upgrades.</p></div>
+      <div class="help-card"><span class="step-num">04</span><h3>Play Merge</h3><p>The classic stacking game is built in! Press Start, drop matching product to cook bigger stacks. Every merge earns your empire product.</p></div>
+      <div class="help-card"><span class="step-num">05</span><h3>Whack-a-Cartel</h3><p>Whack the thugs that pop up before they vanish. Bosses are worth ×5! Score becomes product and drops.</p></div>
+      <div class="help-card"><span class="step-num">06</span><h3>Roulette</h3><p>Spin for crystals! Win up to 100 💎 or a ×2 merge boost. Costs 10 💎 per spin (discounts reduce it).</p></div>
+      <div class="help-card"><span class="step-num">07</span><h3>Quests &amp; drops</h3><p>Do story + daily contracts for crystals &amp; XP. Clicks, buys, cash drops and bosses drop crates with collectibles. Fill your collection!</p></div>
+      <div class="help-card"><span class="step-num">08</span><h3>Level up</h3><p>Earn XP from everything you do. Every level = more production, more tap power and free crystals.</p></div>
+      <div class="help-card"><span class="step-num">09</span><h3>Bosses 👹</h3><p>Every 45–80 minutes the DEA or a rival attacks! Smash it fast for big crystal + crate rewards. Beat your own record!</p></div>
+      <div class="help-card"><span class="step-num">10</span><h3>Global events</h3><p>Random events hit the whole underworld at once — Cartel Wars, Cash Rains, Product Rushes and more. Tap the banner!</p></div>
+      <div class="help-card"><span class="step-num">11</span><h3>Cash drops</h3><p>A glowing cash bundle appears randomly. Grab it fast — Lucky Jackpot, Frenzy, Pack Storm or Time Warp!</p></div>
+      <div class="help-card"><span class="step-num">12</span><h3>Skins &amp; currency</h3><p>Spend 💎 crystals on skins and permanent shop boosts. Your live balance updates on the board in real time.</p></div>
+    </div>
+
+    <div class="view-head"><h2>❓ FAQ</h2></div>
+    <div class="faq">
+      <details><summary>How do I save my progress?</summary><p>Automatically — it's saved in your browser's local storage every few seconds. No account needed. Clear your browser data and it's gone.</p></details>
+      <details><summary>Where does the leaderboard live?</summary><p>Every cartel shares one free keyless cloud store (MantleDB), so the board is truly global and updates in real time. Your haul score updates when you buy or spend.</p></details>
+      <details><summary>What are Connections and Rebuild?</summary><p>When you Rebuild you convert your run's product into 🗝️ Connections. Each connection permanently boosts production. It's the core end-game loop.</p></details>
+      <details><summary>How do I get crystals 💎?</summary><p>Daily rewards, achievements, contracts, cash drops, crates, roulette, bosses and merge milestones. Spend them on skins, boosts and permanent shop upgrades.</p></details>
+      <details><summary>What is the Cartel tab for?</summary><p>Hire personnel (lookouts, sicarios, soldiers, hitmen, capos…) and buy weapons. Your army raises ⚔️ raid power and 🛡️ defense and every soldier adds a production bonus.</p></details>
+      <details><summary>How does the merge mini game help my empire?</summary><p>Every merge adds product to your empire, big merges drop rare collectibles, and making a Narco King grants a legendary drop + crystals.</p></details>
+      <details><summary>What are the bosses?</summary><p>A DEA raid or rival cartel attacks randomly every 45–80 minutes. Tap it to deal damage before the timer runs out. Defeat it for crystals, crates and XP.</p></details>
+      <details><summary>What are the global events?</summary><p>Random timed events (Cartel War, Cash Rain, Product Rush, Coke Rush, Gold Rush) affect the whole underworld at once. Tap the banner when it appears.</p></details>
+      <details><summary>I found a bug!</summary><p>This game is a fictional idle game — hand-built with love (and product).</p></details>
+    </div>
+
+    <div class="quest-block">
+      <h3>⚙️ Settings</h3>
+      <div class="settings-list">
+        <button class="btn-ghost" onclick="toggleSound()">🔊 Toggle Sound</button>
+        <button class="btn-ghost" onclick="openTutorial()">📖 Replay Tutorial</button>
+        <button class="btn-ghost" onclick="resetGame()">🗑️ Reset All Progress</button>
+      </div>
+    </div>
+
+    <div class="about-box">
+      <div class="about-brand">💵 NARCOS<span>EMPIRE</span></div>
+      <p>The drug empire idle game: cartel operations, the merge cooker, smuggling, raids, mini games, contracts, collection, bosses, your army of sicarios and a live global chat + cartel board.</p>
+      <p>A fictional idle game. Not affiliated with any real cartel, person or show.</p>
+    </div>
+
+    <div class="quest-block">
+      <h3>💜 Beta Testers</h3>
+      <p class="quest-hint">A huge thank-you to early testers:</p>
+      <div class="beta-row"><span>👑</span><div><b>witchychick</b><p>Founding beta tester</p></div></div>
+      <div class="beta-row"><span>🥈</span><div><b>Andrew VR</b><p>Founding beta tester</p></div></div>
+      <div class="beta-row"><span>🥉</span><div><b>ayyjabooty</b><p>Founding beta tester</p></div></div>
+      <div class="beta-row"><span>🦈</span><div><b>Skull</b><p>Founding beta tester</p></div></div>
+    </div>
+
+    <footer id="footer">💵 <b>NARCOS</b><b style="color:var(--acc)">EMPIRE</b> — drug empire idle &nbsp;·&nbsp; rise to be the biggest narco on earth</footer>
+
+  </section>
+
+</main>
+
+<!-- ======= BOTTOM NAV (mobile) ======= -->
+<nav class="bottom-nav" id="bottomNav">
+  <button data-view="grow" class="on" onclick="setView('grow')">💵<span>Empire</span></button>
+  <button data-view="mini" onclick="setView('mini')">🕹️<span>Mini</span></button>
+  <button data-view="quests" onclick="setView('quests')">🎯<span>Contracts</span></button>
+  <button data-view="board" onclick="setView('board')">🏆<span>Cartel Board</span></button>
+  <button data-view="chat" onclick="setView('chat')">💬<span>Chat</span></button>
+</nav>
+
+<!-- Cash drop event -->
+<button id="goldenMelon" class="golden hidden" aria-label="Cash drop!">💰</button>
+
+<!-- Boss fight -->
+<div id="bossWrap" class="hidden">
+  <button id="bossBtn" aria-label="Defeat the boss!">
+    <span id="bossEmoji">🚨</span>
+    <span id="bossName">BOSS RAID</span>
+    <span id="bossHPBar"><span id="bossHP"></span></span>
+    <span id="bossTimer">60s</span>
+  </button>
+</div>
+
+<div id="toasts"></div>
+
+<!-- ======= MODALS ======= -->
+<div class="modal-veil hidden" id="veilName">
+  <div class="modal modal-welcome">
+    <div class="welcome-badge">💵</div>
+    <h1 class="welcome-title">Welcome to <span>NARCOS</span>EMPIRE</h1>
+    <p class="modal-sub">Your drug empire is ready.<br>Pick a name and start moving product!</p>
+    <div class="name-field">
+      <span class="name-icon">👤</span>
+      <input id="nameInput" maxlength="16" placeholder="Your cartel boss name" autocomplete="off" oninput="document.getElementById('nameLen').textContent=this.value.length+'/16'">
+      <span class="name-len" id="nameLen">0/16</span>
+    </div>
+    <button class="btn-primary btn-block" onclick="submitName()">🚀 Enter the Empire</button>
+    <div class="welcome-feats">
+      <div><span>💵</span>Idle empire &amp; the merge cooker</div>
+      <div><span>🏴</span>Hire sicarios &amp; build your cartel</div>
+      <div><span>🏆</span>Live global cartel board &amp; chat</div>
+      <div><span>🔒</span>No account — auto-saves on this device</div>
+    </div>
+    <div class="welcome-divider"></div>
+    <button class="install-btn" id="installBtn" onclick="showInstallHelp()">📲 <span>Add to Home Screen</span><em>install</em></button>
+  </div>
+</div>
+
+<div class="modal-veil hidden" id="veilInstall">
+  <div class="modal modal-install">
+    <div class="welcome-badge install-badge">📲</div>
+    <h1 class="welcome-title">Add to your <span>Home Screen</span></h1>
+    <p class="modal-sub">Install NARCOS EMPIRE like a real app — full screen, no browser bar.</p>
+    <div class="install-steps">
+      <div class="istep"><span class="istep-num">1</span><div><b>Tap the Share button</b><p>It's the square-with-arrow at the bottom of your browser.</p></div></div>
+      <div class="istep"><span class="istep-num">2</span><div><b>“Add to Home Screen”</b><p>Scroll down the Share menu and tap it.</p></div></div>
+      <div class="istep"><span class="istep-num">3</span><div><b>Tap Add</b><p>NARCOS EMPIRE now opens full-screen from your home screen — just like a real app!</p></div></div>
+    </div>
+    <button class="btn-primary btn-block" onclick="closeModal('veilInstall')">Got it! 💵</button>
+  </div>
+</div>
+
+<div class="modal-veil hidden" id="veilFish">
+  <div class="modal modal-wide">
+    <div class="modal-emoji">📦</div>
+    <h1>Haul Index</h1>
+    <p class="modal-sub" id="fishIndexCount">0 / 204 discovered</p>
+    <div class="fish-zones" id="fishZoneChips"></div>
+    <div class="fish-grid" id="fishGrid"></div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="closeModal('veilFish')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-veil hidden" id="veilFishCatch">
+  <div class="modal">
+    <div class="modal-emoji" id="fishCatchName">📦</div>
+    <h1 id="fishCatchZone">Catch!</h1>
+    <p class="modal-sub" id="fishCatchReward"></p>
+    <div class="fish-new" id="fishCatchNew">✨ New find! Added to your index!</div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="closeModal('veilFishCatch')">Nice!</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-veil hidden" id="veilDaily">
+  <div class="modal">
+    <div class="modal-emoji">🎁</div>
+    <h1>Daily Drop!</h1>
+    <p class="modal-sub" id="dailyMsg">You claimed your reward.</p>
+    <div class="modal-actions"><button class="btn-primary" onclick="closeModal('veilDaily')">Awesome!</button></div>
+  </div>
+</div>
+
+<div class="modal-veil hidden" id="veilOffline">
+  <div class="modal">
+    <div class="modal-emoji">💤</div>
+    <h1>Welcome back!</h1>
+    <p class="modal-sub" id="offlineMsg">Your product kept moving while you were away.</p>
+    <div class="modal-actions"><button class="btn-primary" onclick="closeModal('veilOffline')">Collect! 💵</button></div>
+  </div>
+</div>
+
+<div class="modal-veil hidden" id="veilAscend">
+  <div class="modal">
+    <div class="modal-emoji">🗝️</div>
+    <h1>Rebuild the Empire?</h1>
+    <p class="modal-sub">You will gain <b id="ascGainN">0</b> 🗝️ connections.<br>Connections give <b>+1%</b> permanent production each (upgradeable).<br>Your product, operations &amp; upgrades reset — achievements, crystals, levels &amp; lifetime product stay!</p>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal('veilAscend')">Not yet</button>
+      <button class="btn-primary" onclick="doRebuild()">⭐ REBUILD</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-veil hidden" id="veilCrate">
+  <div class="modal">
+    <div class="modal-emoji" id="crateEmoji">📦</div>
+    <h1 id="crateName">Crate!</h1>
+    <p class="modal-sub" id="crateMsg"></p>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="crateAgain" onclick="openCrate()">Open next</button>
+      <button class="btn-primary" onclick="closeModal('veilCrate')">Nice!</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-veil hidden" id="veilTutorial">
+  <div class="modal">
+    <div class="modal-emoji">💵</div>
+    <h1>How to Play NARCOS EMPIRE</h1>
+    <div class="tut-steps">
+      <div class="tut-step"><span class="ts-emoji">👆</span><div><div class="ts-title">Tap the product brick</div><div class="ts-desc">Tap the big brick to package product. Buy operations to earn while idle.</div></div></div>
+      <div class="tut-step"><span class="ts-emoji">🧺</span><div><div class="ts-title">Grow your empire</div><div class="ts-desc">Open the Empire tab and buy operations. Upgrades double their output.</div></div></div>
+      <div class="tut-step"><span class="ts-emoji">🕹️</span><div><div class="ts-title">Play mini games</div><div class="ts-desc">Merge (press Start to drop product), Whack-a-Cartel and the Crystal Roulette.</div></div></div>
+      <div class="tut-step"><span class="ts-emoji">🎯</span><div><div class="ts-title">Do quests</div><div class="ts-desc">Daily + story quests give crystals and XP. Open crates to fill your collection.</div></div></div>
+      <div class="tut-step"><span class="ts-emoji">⭐</span><div><div class="ts-title">Rebuild</div><div class="ts-desc">Rebuild your cartel to earn Connections — permanent production boosts. Buy permanent upgrades with connections.</div></div></div>
+      <div class="tut-step"><span class="ts-emoji">👹</span><div><div class="ts-title">Defeat bosses</div><div class="ts-desc">Every 45–80 min a boss attacks. Smash it fast for crystals and crates!</div></div></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="closeTutorial()">Got it! 💵</button>
+    </div>
+    <div class="modal-hint">Tip: tap the brick to package product, and press Start before dropping merge pieces.</div>
+  </div>
+</div>
+
+<script src="fishing.js?v=20260812a"></script>
+<script src="pvp.js?v=20260812a"></script>
+<script src="game.js?v=20260812a"></script>
+<script src="leaderboard.js?v=20260812a"></script>
+<script src="chat.js?v=20260812a"></script>
+<script src="suika.js?v=20260812a"></script>
+</body>
+</html>
