@@ -12,7 +12,7 @@ Open `index.html` in any modern browser — no build step, no install, no server
 
 Or host it anywhere: GitHub Pages, Netlify, Vercel, itch.io, or a USB stick.
 
-[▶ Play now](https://github.com/dave-vrx/NARCOS)
+[▶ Play now](https://dave-vrx.github.io/NARCOS/)
 
 ---
 
