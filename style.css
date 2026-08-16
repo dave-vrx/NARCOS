@@ -797,9 +797,12 @@ button:focus-visible{outline:2px solid var(--amber2);outline-offset:3px}button:a
 @media(max-width:420px){.chip{height:32px;padding:4px 8px}.chip.name-chip #hudName{max-width:70px}.build-badge{font-size:.39rem}.field-jobs,.job-game-card{border-radius:12px}.view-head p{font-size:.78rem}.market-hero{padding:13px}.modal{border-radius:16px;padding:20px 17px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}}
 
-/* v4.1.1 premium Empire navigation mark */
-.empire-nav .empire-tab-icon{display:block;width:25px;height:25px;object-fit:contain;filter:drop-shadow(0 2px 5px rgba(0,0,0,.55));transform:translateZ(0)}
-.empire-nav.on .empire-tab-icon{filter:drop-shadow(0 0 7px rgba(255,190,64,.48)) drop-shadow(0 2px 5px rgba(0,0,0,.5))}
-#sidebar .empire-nav{gap:12px}#sidebar .empire-nav .empire-tab-icon{width:29px;height:29px;flex:0 0 29px}
-.bottom-nav .empire-nav .empire-tab-icon{width:27px;height:27px;margin:0 auto 1px}
-@media(max-width:899px){.bottom-nav .empire-nav.on{background:linear-gradient(180deg,rgba(216,167,68,.16),rgba(216,167,68,.055));box-shadow:inset 0 0 0 1px rgba(239,190,91,.12)}}
+/* v4.1.2 premium HQ tap control */
+.empire-map-shell #melonBtn{display:grid;place-items:center;width:148px;border:1px solid rgba(246,199,96,.42);border-radius:50%;background:radial-gradient(circle at 42% 35%,rgba(255,209,105,.16),rgba(12,15,11,.94) 68%);box-shadow:inset 0 0 0 5px rgba(216,167,68,.055),inset 0 0 32px rgba(216,167,68,.12),0 14px 36px rgba(0,0,0,.52);filter:none;overflow:visible}
+.empire-map-shell #melonBtn:before{bottom:-20px;padding:3px 8px;border:1px solid rgba(216,167,68,.22);border-radius:99px;background:rgba(5,9,6,.9)}
+.hq-tap-icon{position:relative;z-index:2;width:78%;height:78%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 8px 12px rgba(0,0,0,.45));transition:transform .12s ease,filter .12s ease}
+.hq-tap-ring{position:absolute;inset:8px;border:1px dashed rgba(246,199,96,.35);border-radius:50%;animation:hqRingSpin 16s linear infinite;pointer-events:none}
+.hq-tap-label{position:absolute;z-index:3;bottom:12px;padding:3px 9px;border:1px solid rgba(255,222,143,.3);border-radius:99px;background:rgba(15,11,4,.82);color:#ffe1a0;font-size:.5rem;font-weight:1000;letter-spacing:.2em;box-shadow:0 4px 12px rgba(0,0,0,.4);pointer-events:none}
+#melonBtn:hover .hq-tap-icon{transform:scale(1.04);filter:drop-shadow(0 0 16px rgba(255,189,53,.42)) drop-shadow(0 8px 12px rgba(0,0,0,.45))}#melonBtn:active .hq-tap-icon,#melonBtn.press .hq-tap-icon{transform:scale(.92)}
+@keyframes hqRingSpin{to{transform:rotate(360deg)}}
+@media(max-width:899px){.empire-map-shell #melonBtn{width:126px}.hq-tap-label{bottom:9px}}
