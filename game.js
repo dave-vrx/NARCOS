@@ -555,6 +555,7 @@ function defaultSave(){
     whack:{best:0,games:0},    roulette:{spins:0,wins:0,jackpots:0},
     fish:{rod:0,best:0,games:0,caught:0,royal:0,index:{}},
     balloon:{best:0,games:0},
+    safe:{best:0,games:0,wins:0},wash:{best:0,games:0,busts:0},
     pvp:{raids:0,won:0,stolen:0,defended:0,lost:0,lastRaid:0},
     cartel:{p:{},w:[]},
     eventClaimed:'',lastEventEnd:0,
@@ -583,6 +584,8 @@ function loadGame(){
   G.save.roulette=Object.assign({spins:0,wins:0,jackpots:0},G.save.roulette||{});
   G.save.fish=Object.assign({rod:0,best:0,games:0,caught:0,royal:0,index:{}},G.save.fish||{});
   G.save.balloon=Object.assign({best:0,games:0},G.save.balloon||{});
+  G.save.safe=Object.assign({best:0,games:0,wins:0},G.save.safe||{});
+  G.save.wash=Object.assign({best:0,games:0,busts:0},G.save.wash||{});
   G.save.pvp=Object.assign({raids:0,won:0,stolen:0,defended:0,lost:0,lastRaid:0},G.save.pvp||{});
   G.save.cartel=Object.assign({p:{},w:[]},G.save.cartel||{});
   G.save.cartel.p=G.save.cartel.p||{};
@@ -698,7 +701,7 @@ function switchGrowTab(t){
 }
 function switchMiniTab(m){
   document.querySelectorAll('#miniTabs button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
-  ['suika','whack','roulette','fishing','balloon'].forEach(x=>{ const el=$('mini-'+x); if(el) el.classList.toggle('on',x===m); });
+  ['suika','whack','roulette','fishing','balloon','safe','wash'].forEach(x=>{ const el=$('mini-'+x); if(el) el.classList.toggle('on',x===m); });
   if(m==='roulette') setTimeout(layoutRoulette,50);
   if(m==='fishing'&&typeof Fishing!=='undefined') Fishing.render();
 }
@@ -713,6 +716,14 @@ function refreshHud(){
   $('hudRankEmoji')&&($('hudRankEmoji').textContent=r.emoji);
   updateRouletteUI();
   updateEmpireMap();
+  updateFieldJobs();
+}
+function updateFieldJobs(){
+  if(!G.save) return;
+  const total=(G.save.safe&&G.save.safe.games||0)+(G.save.wash&&G.save.wash.games||0)+(G.save.fish&&G.save.fish.games||0)+(G.save.pvp&&G.save.pvp.raids||0);
+  const totalEl=$('fieldJobTotal'), crateEl=$('fieldCrateStatus');
+  if(totalEl) totalEl.textContent=fmt(total)+' job'+(total===1?'':'s')+' completed';
+  if(crateEl) crateEl.textContent=G.save.inv?G.save.inv+' crate'+(G.save.inv===1?'':'s')+' waiting':'No crates waiting';
 }
 
 function updateComboUI(){
@@ -1734,6 +1745,100 @@ function balloonFinish(score){
   Leaderboard&&Leaderboard.bump&&Leaderboard.bump();
 }
 
+/* ---------------- safehouse crack ---------------- */
+
+let safeRun=false,safePos=0,safeDir=1,safeTarget=40,safeTargetSize=18,safeLocks=0,safeMisses=0,safeFrame=0,safeLast=0,safePrecision=0;
+function initSafehouse(){
+  const action=$('safeAction'); if(!action) return;
+  action.addEventListener('click',()=>safeRun?safeAttempt():safeStart()); updateSafeUI();
+}
+function safeStart(){
+  safeRun=true; safePos=0; safeDir=1; safeLocks=0; safeMisses=0; safePrecision=0; safeLast=performance.now();
+  $('safeAction').textContent='🔓 Crack tumbler'; $('safeStatus').textContent='Tumbler one is moving… hit the green zone.';
+  safeNewTarget(); updateSafeUI(); cancelAnimationFrame(safeFrame); safeFrame=requestAnimationFrame(safeTick);
+}
+function safeNewTarget(){ safeTarget=10+Math.random()*62; safeTargetSize=Math.max(10,18-safeLocks*3); }
+function safeTick(now){
+  if(!safeRun) return;
+  const dt=Math.min(40,now-safeLast); safeLast=now; safePos+=safeDir*dt*(0.055+safeLocks*0.018);
+  if(safePos>=100){ safePos=100; safeDir=-1; } if(safePos<=0){ safePos=0; safeDir=1; }
+  updateSafeUI(); safeFrame=requestAnimationFrame(safeTick);
+}
+function safeAttempt(){
+  if(!safeRun) return;
+  const center=safeTarget+safeTargetSize/2, dist=Math.abs(safePos-center);
+  if(safePos>=safeTarget&&safePos<=safeTarget+safeTargetSize){
+    safeLocks++; safePrecision+=Math.max(0,100-Math.round(dist/(safeTargetSize/2)*100)); beepAch();
+    $('safeStatus').textContent=safeLocks>=3?'All tumblers open!':'Clean hit. Next tumbler is faster.';
+    if(safeLocks>=3){ safeFinish(true); return; } safeNewTarget();
+  }else{
+    safeMisses++; beepClick(); $('safeStatus').textContent='Missed it. '+(3-safeMisses)+' attempt'+(3-safeMisses===1?'':'s')+' left.';
+    if(safeMisses>=3){ safeFinish(false); return; }
+  }
+  updateSafeUI();
+}
+function updateSafeUI(){
+  if(!$('safeNeedle')) return;
+  $('safeNeedle').style.left=safePos+'%'; $('safeTarget').style.left=safeTarget+'%'; $('safeTarget').style.width=safeTargetSize+'%';
+  $('safeLocks').textContent=safeLocks+' / 3'; $('safeMisses').textContent=safeMisses+' / 3'; $('safeBest').textContent=G.save&&G.save.safe?G.save.safe.best:0;
+  document.querySelectorAll('#safeLights i').forEach((el,i)=>el.classList.toggle('on',i<safeLocks));
+}
+function safeFinish(won){
+  safeRun=false; cancelAnimationFrame(safeFrame); G.save.safe.games++;
+  const score=safeLocks*100+Math.floor(safePrecision/3); G.save.safe.best=Math.max(G.save.safe.best,score);
+  if(won){
+    G.save.safe.wins++; const mult=miniRewardMult(), cash=Math.floor((700+score*12)*mult), cry=Math.max(1,Math.floor(score/120));
+    addMelons(cash); addCrystals(cry); gainXp(12); dropCrate(1);
+    $('safeStatus').textContent='SAFE OPEN · +'+fmtW(cash)+' product · +'+cry+' 💎 · +1 📦'; toast('Safehouse cracked! Rewards secured.','🔐');
+  }else{
+    const cash=Math.floor(safeLocks*250*miniRewardMult()); addMelons(cash); gainXp(safeLocks*2); $('safeStatus').textContent='Job blown. The crew escaped with '+fmtW(cash)+' product.';
+  }
+  $('safeAction').textContent='↻ Run another job'; updateSafeUI(); refreshHud(); checkAchievements(); checkQuests(true); Leaderboard&&Leaderboard.bump&&Leaderboard.bump();
+}
+
+/* ---------------- money wash ---------------- */
+
+let washRun=false,washCleaned=0,washHeat=0,washEnd=0,washTimerIv=null,washCoolIv=null;
+function initMoneyWash(){
+  if(!$('washAction')) return;
+  $('washAction').addEventListener('click',()=>washRun?washBatch():washStart()); $('washCool').addEventListener('click',washCoolDown); updateWashUI();
+}
+function washStart(){
+  washRun=true; washCleaned=0; washHeat=0; washEnd=Date.now()+20000;
+  $('washAction').textContent='💵 Clean batch'; $('washCool').disabled=false; $('washMode').textContent='RUNNING'; $('washStatus').textContent='Operation live. Watch the heat.'; updateWashUI();
+  clearInterval(washTimerIv); clearInterval(washCoolIv);
+  washTimerIv=setInterval(()=>{ if(Date.now()>=washEnd) washFinish(false); else updateWashUI(); },100);
+  washCoolIv=setInterval(()=>{ washHeat=Math.max(0,washHeat-1.8); updateWashUI(); },300);
+}
+function washBatch(){
+  if(!washRun) return;
+  const batch=80+Math.floor(Math.random()*121); washCleaned+=batch; washHeat+=9+Math.random()*10;
+  $('washCash').classList.remove('pulse'); void $('washCash').offsetWidth; $('washCash').classList.add('pulse'); beepBuy();
+  if(washHeat>=100) washFinish(true); else updateWashUI();
+}
+function washCoolDown(){
+  if(!washRun) return;
+  washHeat=Math.max(0,washHeat-28); washEnd-=1200; $('washStatus').textContent='Crew laid low. Heat dropped, but time moved on.'; beepClick(); updateWashUI();
+}
+function updateWashUI(){
+  if(!$('washHeatBar')) return;
+  const left=washRun?Math.max(0,Math.ceil((washEnd-Date.now())/1000)):20;
+  $('washTimer').textContent=left+'s'; $('washCleaned').textContent='$'+fmt(washCleaned); $('washBest').textContent='$'+fmt(G.save&&G.save.wash?G.save.wash.best:0);
+  $('washHeatText').textContent=Math.min(100,Math.round(washHeat))+'%'; $('washHeatBar').style.width=Math.min(100,washHeat)+'%'; $('washHeatBar').classList.toggle('hot',washHeat>=70);
+}
+function washFinish(busted){
+  if(!washRun) return;
+  washRun=false; clearInterval(washTimerIv); clearInterval(washCoolIv); G.save.wash.games++;
+  if(busted){ G.save.wash.busts++; washCleaned=Math.floor(washCleaned*.45); $('washStatus').textContent='BUSTED · 55% seized. The rest reached the empire.'; }
+  else $('washStatus').textContent='CLEAN EXIT · The full shipment reached the empire.';
+  G.save.wash.best=Math.max(G.save.wash.best,washCleaned);
+  const reward=Math.floor(washCleaned*8*miniRewardMult()); addMelons(reward); gainXp(Math.floor(washCleaned/100));
+  if(!busted&&washCleaned>=700) addCrystals(2); if(!busted&&washCleaned>=1000) dropCrate(1);
+  toast((busted?'Heat got you: ':'Money washed: ')+'+'+fmtW(reward)+' product','💵');
+  $('washAction').textContent='↻ Run another wash'; $('washCool').disabled=true; $('washMode').textContent=busted?'BUSTED':'CLEAN';
+  updateWashUI(); refreshHud(); checkAchievements(); checkQuests(true); Leaderboard&&Leaderboard.bump&&Leaderboard.bump();
+}
+
 /* ---------------- boss fights ---------------- */
 
 const BOSSES=[
@@ -1898,6 +2003,8 @@ function startGame(){
   initWhack();
   initBoss();
   initBalloon();
+  initSafehouse();
+  initMoneyWash();
   renderAll();
   scheduleGolden(25000);
   postBoot();

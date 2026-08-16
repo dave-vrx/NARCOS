@@ -130,6 +130,15 @@
       <button onclick="openMapRoute('board')"><span>⚔</span><div><b>Raid a rival</b><small>Climb the cartel board</small></div></button>
     </div>
 
+    <section class="field-jobs">
+      <div class="field-jobs-head"><div><span class="eyebrow">NEW OPPORTUNITIES</span><h2>Field jobs</h2></div><span id="fieldJobTotal">0 jobs completed</span></div>
+      <div class="field-job-grid">
+        <button onclick="openMapRoute('mini','safe')"><span class="job-icon">🔐</span><div><b>Crack a safehouse</b><small>Precision job · crystals and crates</small></div><strong>START →</strong></button>
+        <button onclick="openMapRoute('mini','wash')"><span class="job-icon">💵</span><div><b>Clean the cash</b><small>Risk job · manage police heat</small></div><strong>START →</strong></button>
+        <button onclick="openMapRoute('quests')"><span class="job-icon">📦</span><div><b>Check the warehouse</b><small id="fieldCrateStatus">No crates waiting</small></div><strong>OPEN →</strong></button>
+      </div>
+    </section>
+
     <nav class="center-tabs" id="growTabs">
       <button data-tab="farm" class="on">🧺 Operations</button>
       <button data-tab="cartel">🏴 Cartel</button>
@@ -170,6 +179,8 @@
       <button data-m="roulette">🎡 Roulette</button>
       <button data-m="fishing">🚤 Smuggle</button>
       <button data-m="balloon">🎈 Pop</button>
+      <button data-m="safe">🔐 Safehouse</button>
+      <button data-m="wash">💵 Money Wash</button>
     </nav>
 
     <div id="mini-suika" class="mini on">
@@ -264,6 +275,30 @@
       </div>
       <div class="balloon-area" id="balloonArea"></div>
       <p class="game-hint">Pop the contraband balloons before they float away! Coke blocks 🧊 are worth ×5. Score becomes product + drops.</p>
+    </div>
+
+    <div id="mini-safe" class="mini">
+      <div class="job-game-card">
+        <div class="job-game-title"><span>🔐</span><div><span class="eyebrow">PRECISION JOB</span><h2>Safehouse Crack</h2><p>Hit the tumblers inside the green zone. Crack three before three mistakes.</p></div></div>
+        <div class="safe-hud"><div class="sstat"><span>🔓 Locks</span><b id="safeLocks">0 / 3</b></div><div class="sstat"><span>🚨 Mistakes</span><b id="safeMisses">0 / 3</b></div><div class="sstat"><span>🏆 Best</span><b id="safeBest">0</b></div></div>
+        <div class="safe-vault"><div class="safe-door"><div class="safe-wheel">✣</div><div class="safe-lights" id="safeLights"><i></i><i></i><i></i></div></div></div>
+        <div class="safe-track" id="safeTrack"><div class="safe-target" id="safeTarget"></div><div class="safe-needle" id="safeNeedle"></div></div>
+        <div class="job-status" id="safeStatus">The safehouse is quiet. Start when ready.</div>
+        <button class="btn-primary btn-block" id="safeAction">▶ Start the job</button>
+        <p class="game-hint">Each lock moves faster. A perfect center hit pays a precision bonus.</p>
+      </div>
+    </div>
+
+    <div id="mini-wash" class="mini">
+      <div class="job-game-card">
+        <div class="job-game-title"><span>💵</span><div><span class="eyebrow">RISK JOB</span><h2>Money Wash</h2><p>Process as much cash as possible without letting police heat hit 100%.</p></div></div>
+        <div class="wash-hud"><div class="sstat"><span>⏱️ Time</span><b id="washTimer">20s</b></div><div class="sstat"><span>✅ Cleaned</span><b id="washCleaned">$0</b></div><div class="sstat"><span>🏆 Best</span><b id="washBest">$0</b></div></div>
+        <div class="wash-machine"><div class="wash-cash" id="washCash">💵</div><div class="wash-drum"></div><div class="wash-led">CASH PROCESSOR // <b id="washMode">STANDBY</b></div></div>
+        <div class="heat-label"><span>POLICE HEAT</span><b id="washHeatText">0%</b></div><div class="heat-track"><div id="washHeatBar"></div></div>
+        <div class="job-status" id="washStatus">Keep the heat under control. Greed gets expensive.</div>
+        <div class="wash-actions"><button class="btn-primary" id="washAction">▶ Start washing</button><button class="btn-ghost" id="washCool" disabled>🧊 Cool operation</button></div>
+        <p class="game-hint">Clean Batch raises heat. Cooling buys safety but costs valuable time.</p>
+      </div>
     </div>
   </section>
 
@@ -580,7 +615,7 @@
     <div class="tut-steps">
       <div class="tut-step"><span class="ts-emoji">👆</span><div><div class="ts-title">Tap the product brick</div><div class="ts-desc">Tap the big brick to package product. Buy operations to earn while idle.</div></div></div>
       <div class="tut-step"><span class="ts-emoji">🧺</span><div><div class="ts-title">Grow your empire</div><div class="ts-desc">Open the Empire tab and buy operations. Upgrades double their output.</div></div></div>
-      <div class="tut-step"><span class="ts-emoji">🕹️</span><div><div class="ts-title">Play mini games</div><div class="ts-desc">Merge (press Start to drop product), Whack-a-Cartel and the Crystal Roulette.</div></div></div>
+      <div class="tut-step"><span class="ts-emoji">🕹️</span><div><div class="ts-title">Play mini games</div><div class="ts-desc">Merge product, crack safehouses, wash cash, run shipments and take on quick cartel jobs for rewards.</div></div></div>
       <div class="tut-step"><span class="ts-emoji">🎯</span><div><div class="ts-title">Do quests</div><div class="ts-desc">Daily + story quests give crystals and XP. Open crates to fill your collection.</div></div></div>
       <div class="tut-step"><span class="ts-emoji">⭐</span><div><div class="ts-title">Rebuild</div><div class="ts-desc">Rebuild your cartel to earn Connections — permanent production boosts. Buy permanent upgrades with connections.</div></div></div>
       <div class="tut-step"><span class="ts-emoji">👹</span><div><div class="ts-title">Defeat bosses</div><div class="ts-desc">Every 45–80 min a boss attacks. Smash it fast for crystals and crates!</div></div></div>
@@ -594,7 +629,7 @@
 
 <script src="fishing.js?v=20260812a"></script>
 <script src="pvp.js?v=20260812a"></script>
-<script src="game.js?v=20260812a"></script>
+<script src="game.js?v=20260816c"></script>
 <script src="leaderboard.js?v=20260812a"></script>
 <script src="chat.js?v=20260812a"></script>
 <script src="suika.js?v=20260812a"></script>
