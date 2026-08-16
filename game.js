@@ -657,12 +657,34 @@ function setView(v){
   document.querySelectorAll('#bottomNav button,#sidebar button').forEach(b=>b.classList.toggle('on',b.dataset.view===v));
   if(v==='quests'){ renderQuestTab(); renderCollection(); renderInventory(); }
   if(v==='chat'&&typeof Chat!=='undefined') Chat.onOpen();
-  if(v==='grow') updateEventBanner();
+  if(v==='grow'){ updateEventBanner(); updateEmpireMap(); }
   if(v==='board'&&typeof PVP!=='undefined') PVP.render();
   if(v!=='mini'&&typeof window.suikaPause==='function') window.suikaPause();
   window.scrollTo(0,0);
   const m=document.querySelector('main'); if(m) m.scrollTop=0;
 }
+function openMapRoute(view,tab){
+  setView(view);
+  if(view==='grow'&&tab) switchGrowTab(tab);
+  if(view==='mini'&&tab) switchMiniTab(tab);
+  if(view==='grow'&&tab) setTimeout(()=>scrollGameIntoView('#growTabs',18),80);
+}
+function updateEmpireMap(){
+  if(!G.save) return;
+  const sites=totalBuildings();
+  const income=effectivePerSec();
+  const power=Math.floor(cartelPower());
+  const activeThreat=G.save.boss&&G.save.boss.id&&G.save.boss.fightUntil>Date.now();
+  const incomeEl=$('mapIncome'), territoryEl=$('mapTerritory'), powerEl=$('mapPower'), threatEl=$('mapThreat');
+  if(incomeEl) incomeEl.textContent='$'+fmt(income)+'/s';
+  if(territoryEl) territoryEl.textContent=fmt(sites)+' site'+(sites===1?'':'s');
+  if(powerEl) powerEl.textContent=fmt(power);
+  if(threatEl){
+    threatEl.textContent=activeThreat?'ACTIVE':'LOW';
+    threatEl.className=activeThreat?'threat-active':'threat-low';
+  }
+}
+window.openMapRoute=openMapRoute;
 function scrollGameIntoView(sel,pad){
   const m=document.querySelector('main'); if(!m) return;
   const el=document.querySelector(sel); if(!el) return;
@@ -690,6 +712,7 @@ function refreshHud(){
   const r=rankInfo();
   $('hudRankEmoji')&&($('hudRankEmoji').textContent=r.emoji);
   updateRouletteUI();
+  updateEmpireMap();
 }
 
 function updateComboUI(){

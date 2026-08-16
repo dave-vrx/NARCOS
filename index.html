@@ -14,7 +14,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💵</text></svg>">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="style.css?v=20260812a">
+<link rel="stylesheet" href="style.css?v=20260816b">
 </head>
 <body data-view="grow">
 
@@ -63,6 +63,19 @@
       <span id="eventText">EVENT!</span><span id="eventTimer"></span>
     </div>
 
+    <div class="empire-map-shell">
+      <div class="map-topline">
+        <div><span class="eyebrow">COMMAND CENTER</span><h1>Your territory</h1></div>
+        <div class="live-signal"><i></i> NETWORK LIVE</div>
+      </div>
+
+      <button class="map-node node-finca" onclick="openMapRoute('grow','farm')"><span>🌿</span><b>FINCA</b><small>Operations</small></button>
+      <button class="map-node node-airstrip" onclick="openMapRoute('mini','fishing')"><span>✈️</span><b>AIRSTRIP</b><small>Smuggling</small></button>
+      <button class="map-node node-city" onclick="openMapRoute('quests')"><span>🎯</span><b>MEDELLÍN</b><small>Contracts</small></button>
+      <button class="map-node node-port" onclick="openMapRoute('board')"><span>⚓</span><b>THE PORT</b><small>Raids</small></button>
+      <button class="map-node node-compound" onclick="openMapRoute('grow','cartel')"><span>🏴</span><b>COMPOUND</b><small>Cartel</small></button>
+      <button class="map-node node-market" onclick="openMapRoute('grow','shop')"><span>💎</span><b>BLACK MARKET</b><small>Upgrades</small></button>
+
     <div class="melon-stage">
       <div class="boost-pill" id="boostPill" style="display:none"></div>
       <button id="melonBtn" aria-label="Tap the product brick">
@@ -95,11 +108,26 @@
     </div>
 
     <div class="stats">
+      <span class="eyebrow">AVAILABLE CASH</span>
       <div class="big-number" id="melonCount">0</div>
       <div class="substats">
         <span class="substat">⚡ <b id="perSec">0</b>/s</span>
         <span class="substat">👆 <b id="perClick">1</b>/tap</span>
       </div>
+    </div>
+      <div class="map-intel">
+        <div><span>INCOME</span><b id="mapIncome">$0/s</b></div>
+        <div><span>TERRITORY</span><b id="mapTerritory">0 sites</b></div>
+        <div><span>ARMY POWER</span><b id="mapPower">0</b></div>
+        <div><span>THREAT</span><b id="mapThreat" class="threat-low">LOW</b></div>
+      </div>
+    </div>
+
+    <div class="command-actions">
+      <button onclick="openMapRoute('grow','farm')"><span>＋</span><div><b>Expand operation</b><small>Build production sites</small></div></button>
+      <button onclick="openMapRoute('quests')"><span>▣</span><div><b>Take a contract</b><small>Earn crystals and XP</small></div></button>
+      <button onclick="openMapRoute('mini','fishing')"><span>⌁</span><div><b>Run a shipment</b><small>Move product by sea</small></div></button>
+      <button onclick="openMapRoute('board')"><span>⚔</span><div><b>Raid a rival</b><small>Climb the cartel board</small></div></button>
     </div>
 
     <nav class="center-tabs" id="growTabs">
