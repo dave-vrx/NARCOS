@@ -16,7 +16,7 @@ const G = window.G = {
   bossTimer:null, bossTicker:null
 };
 
-const BUILD_VERSION='4.0.0';
+const BUILD_VERSION='4.1.0';
 const MAX_ECONOMY_VALUE=999999999999;
 const MAX_PRODUCT_GRAMS=1000000000;
 const STANDARD_GRAM_PRICE=80;
@@ -594,7 +594,7 @@ function addCrystals(n){ if(!(n>0)) return; G.save.crystals+=n; G.save.crystalsE
 function defaultSave(){
   return {v:3,name:'',playerId:'',melons:0,runEarned:0,lifetimeEarned:0,cash:0,runCashEarned:0,lifetimeCash:0,buildings:{},upgrades:[],
     seeds:0,totalSeeds:0,ascensions:0,crystals:0,crystalsEarned:0,asc:{},shop:{},ach:[],
-    totalClicks:0,goldenClicks:0,maxCombo:0,offlineEarns:0,
+    totalClicks:0,goldenClicks:0,maxCombo:0,offlineEarns:0,notifications:[],
     lastDaily:null,dailyStreak:0,dailyClaimed:true,lastOnline:Date.now(),sound:true,
     xp:0,level:1,quests:{},dqDay:'',dqIds:[],dqProg:{},dqDone:[],dqBase:{},
     coll:{},inv:0,cratesOpened:0,skins:[],skin:'classic',
@@ -639,6 +639,7 @@ function loadGame(){
   G.save.cartel.p=G.save.cartel.p||{};
   G.save.cartel.w=G.save.cartel.w||[];
   G.save.boss=Object.assign({id:null,name:'',emoji:'👹',hp:0,maxHp:0,nextAt:Date.now()+2400000,tier:1,kills:0,fightUntil:0},G.save.boss||{});
+  G.save.notifications=Array.isArray(G.save.notifications)?G.save.notifications.slice(0,30):[];
   G.save.level=G.save.level||1;
   G.save.xp=G.save.xp||0;
   G.soundOn=G.save.sound!==false;
@@ -680,17 +681,33 @@ function beepBuy(){ tone(520,0.08,'square',0.035); tone(700,0.12,'square',0.035,
 function beepAch(){ tone(880,0.1,'sine',0.05); tone(1174,0.16,'sine',0.05,0.09); }
 function beepGolden(){ tone(660,0.09,'sine',0.05); tone(880,0.09,'sine',0.05,0.08); tone(1320,0.16,'sine',0.05,0.16); }
 function beepRebuild(){ tone(392,0.14,'sawtooth',0.04); tone(523,0.14,'sawtooth',0.04,0.12); tone(659,0.14,'sawtooth',0.04,0.24); tone(784,0.3,'sawtooth',0.05,0.36); }
-function toggleSound(){ G.soundOn=!G.soundOn; G.save.sound=G.soundOn; $('btnSound').textContent=G.soundOn?'🔊':'🔇'; saveGame(); }
+function beepNotify(){ tone(740,0.08,'sine',0.035); tone(980,0.13,'sine',0.04,0.07); }
+function toggleSound(){ G.soundOn=!G.soundOn; G.save.sound=G.soundOn; $('btnSound').textContent=G.soundOn?'🔊':'🔇'; if(G.soundOn) beepNotify(); saveGame(); }
 
 /* ---------------- ui ---------------- */
 
 function toast(msg,icon){
   const t=document.createElement('div'); t.className='toast';
-  t.innerHTML=(icon?'<span>'+escapeHtml(icon)+'</span>':'')+escapeHtml(msg);
+  t.innerHTML=(icon?'<span>'+escapeHtml(icon)+'</span>':'')+'<div>'+escapeHtml(msg)+'</div><i></i>';
   $('toasts').appendChild(t);
-  setTimeout(()=>t.remove(),3600);
+  setTimeout(()=>{ t.classList.add('leaving'); setTimeout(()=>t.remove(),260); },4200);
   while($('toasts').children.length>4) $('toasts').firstChild.remove();
+  if(G.save){
+    G.save.notifications=G.save.notifications||[];
+    G.save.notifications.unshift({m:String(msg),i:icon||'•',t:Date.now()}); G.save.notifications=G.save.notifications.slice(0,30);
+    G.notifyUnread=(G.notifyUnread||0)+1; renderNotificationCenter();
+  }
 }
+function notificationTime(ts){ const sec=Math.max(0,Math.floor((Date.now()-ts)/1000)); if(sec<60)return 'now'; if(sec<3600)return Math.floor(sec/60)+'m'; if(sec<86400)return Math.floor(sec/3600)+'h'; return Math.floor(sec/86400)+'d'; }
+function renderNotificationCenter(){
+  const list=$('notificationList'),count=$('notifyCount'); if(count) count.textContent=G.notifyUnread?Math.min(99,G.notifyUnread):''; if(!list||!G.save) return;
+  const items=G.save.notifications||[]; list.innerHTML=items.length?items.map(n=>'<div class="notification-item"><span>'+escapeHtml(n.i)+'</span><div><b>'+escapeHtml(n.m)+'</b><small>'+notificationTime(n.t)+' ago</small></div></div>').join(''):'<div class="notification-empty">Your empire activity will appear here.</div>';
+}
+function toggleNotificationCenter(){
+  const panel=$('notificationCenter'); if(!panel) return;
+  panel.classList.toggle('hidden'); if(!panel.classList.contains('hidden')){ G.notifyUnread=0; renderNotificationCenter(); }
+}
+window.toggleNotificationCenter=toggleNotificationCenter;
 function openModal(id){ $(id).classList.remove('hidden'); }
 function closeModal(id){ $(id).classList.add('hidden'); }
 
@@ -1706,6 +1723,7 @@ function renderAll(){
   renderBuildings(); renderCartel(); renderUpgrades(); renderMarketplace(); renderRebuild(); renderShop();
   renderAchievements(); renderRankCard(); renderDaily(); updateStats();
   renderQuestTab(); renderCollection(); renderInventory();
+  renderNotificationCenter();
   checkAchievements();
 }
 function reRenderPanels(){

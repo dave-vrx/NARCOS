@@ -11,8 +11,9 @@ const PVP=(()=>{
   const URL='https://mantledb.sh/v2/narcos/pvp';
   const COOLDOWN=60000;
   const STASH_RATE=0.05;       // 5% of production fills stash
-  const SYNC_MS=45000;
+  const SYNC_MS=15000;
   const OFFLINE_CAP=12*3600;
+  const LOCAL_TEST=location.hostname==='localhost'||location.hostname==='127.0.0.1'||location.hostname==='::1';
 
   let doc=null;
   let docLoaded=false;
@@ -20,6 +21,7 @@ const PVP=(()=>{
   let lastSync=0;
   let raiding=false;
   let lastResult='';
+  let cinematicTimer=null;
 
   function myId(){
     if(G.save&&G.save.playerId) return G.save.playerId;
@@ -51,6 +53,7 @@ const PVP=(()=>{
     }catch(e){}
   }
   async function saveDoc(){
+    if(LOCAL_TEST) return;
     try{
       await fetch(URL,{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({p:doc?doc.p:{},updated:Date.now()})});
@@ -62,7 +65,9 @@ const PVP=(()=>{
     await load();
     if(!doc) return;
     const id=myId();
-    const cur=doc.p[id]||{s:0,d:0,name:''};
+    const cur=doc.p[id]||{s:0,d:0,name:'',alerts:[]};
+    const alerts=Array.isArray(cur.alerts)?cur.alerts.slice(-8):[];
+    cur.alerts=[];
     cur.s=(cur.s||0)+pending;
     cur.d=defense();
     cur.name=myName();
@@ -70,6 +75,7 @@ const PVP=(()=>{
     doc.p[id]=cur;
     pending=0;
     await saveDoc();
+    if(alerts.length) handleIncomingAlerts(alerts);
     render();
   }
 
@@ -142,8 +148,10 @@ const PVP=(()=>{
     const myP=power(), theirD=Math.max(1,tgt.def||5);
     const win=Math.random()<myP/(myP+theirD);
     st.raids=(st.raids||0)+1;
+    let raidAmount=0;
     if(win){
       const steal=Math.min(tgt.stash,stashCap());
+      raidAmount=steal;
       if(steal<=0){
         lastResult='Raid on '+escapeHtml(tgt.name)+'! Their stash is empty — +20g pity product.';
         addMelons(20); st.won=(st.won||0)+1;
@@ -165,6 +173,12 @@ const PVP=(()=>{
       toast(lastResult,'💥');
       beepRaid(false);
     }
+    if(doc&&doc.p&&doc.p[tgt.id]){
+      const target=doc.p[tgt.id]; target.alerts=Array.isArray(target.alerts)?target.alerts:[];
+      target.alerts.push({id:'r'+now,a:myName(),d:tgt.name||'Cartel',ap:myP,dp:theirD,aw:win,n:raidAmount,ts:now});
+      target.alerts=target.alerts.slice(-8);
+    }
+    showCinematic({attacker:myName(),defender:tgt.name||'Cartel',attackPower:myP,defensePower:theirD,attackerWon:win,amount:raidAmount,incoming:false});
     st.lastRaid=now;
     await saveDoc();
     saveGame();
@@ -179,6 +193,30 @@ const PVP=(()=>{
     if(win){ tone(660,0.1,'square',0.05); tone(880,0.14,'square',0.05,0.09); tone(1174,0.2,'square',0.05,0.18); }
     else tone(200,0.22,'sawtooth',0.05);
   }
+
+  function beepIncoming(defended){
+    if(typeof tone!=='function') return;
+    tone(180,0.18,'sawtooth',0.055); tone(240,0.18,'sawtooth',0.05,0.18); tone(defended?620:130,0.32,defended?'square':'sawtooth',0.055,0.36);
+  }
+  function handleIncomingAlerts(alerts){
+    const latest=alerts[alerts.length-1]; if(!latest) return;
+    const defended=!latest.aw,st=pvpStats(); if(defended) st.defended=(st.defended||0)+1;
+    showCinematic({attacker:latest.a||'Unknown cartel',defender:myName(),attackPower:latest.ap||0,defensePower:latest.dp||defense(),attackerWon:!!latest.aw,amount:latest.n||0,incoming:true});
+    toast((latest.a||'A rival')+(defended?' failed to raid you!':' raided your stash!'),defended?'🛡️':'🚨'); beepIncoming(defended);
+    for(let i=0;i<alerts.length-1;i++) toast((alerts[i].a||'A rival')+' also attempted a raid.','📡');
+  }
+  function showCinematic(data){
+    const wrap=el('raidCinematic'); if(!wrap) return;
+    const defended=data.incoming&&!data.attackerWon,playerWon=data.incoming?defended:data.attackerWon;
+    el('raidAttacker').textContent=data.attacker||'Unknown cartel'; el('raidDefender').textContent=data.defender||'Unknown cartel';
+    el('raidAttackPower').textContent='Power '+fmt(data.attackPower||0); el('raidDefensePower').textContent='Defense '+fmt(data.defensePower||0);
+    el('raidKicker').textContent=data.incoming?'INCOMING RAID REPORT':'OUTGOING RAID REPORT';
+    el('raidOutcome').textContent=playerWon?(data.incoming?'DEFENSE HELD':'RAID SUCCESSFUL'):(data.incoming?'STASH BREACHED':'RAID FAILED');
+    el('raidLoot').textContent=data.amount>0?((data.attackerWon?'Loot moved: ':'Loot protected: ')+(typeof fmtW==='function'?fmtW(data.amount):fmt(data.amount))):'No stash changed hands';
+    wrap.className='raid-cinematic '+(playerWon?'victory':'defeat')+(data.incoming?' incoming':' outgoing');
+    clearTimeout(cinematicTimer); cinematicTimer=setTimeout(closeCinematic,7500);
+  }
+  function closeCinematic(){ const wrap=el('raidCinematic'); if(wrap) wrap.classList.add('hidden'); clearTimeout(cinematicTimer); }
 
   function render(){
     if(typeof G==='undefined'||!G.save) return;
@@ -198,6 +236,6 @@ const PVP=(()=>{
   }
   function el(id){ return document.getElementById(id); }
 
-  return {init,tick,raid,render,power,defense,stash:myStash,stats:pvpStats,targets:targetList};
+  return {init,tick,raid,render,power,defense,stash:myStash,stats:pvpStats,targets:targetList,showCinematic,closeCinematic};
 })();
 window.PVP=PVP;
