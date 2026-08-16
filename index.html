@@ -14,7 +14,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💵</text></svg>">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="style.css?v=20260816e">
+<link rel="stylesheet" href="style.css?v=20260816f">
 </head>
 <body data-view="grow">
 
@@ -24,7 +24,7 @@
 
 <!-- ======= TOP BAR ======= -->
 <header id="topbar">
-  <div class="logo" onclick="openNameModal()">💵 <span>NARCOS</span><b>EMPIRE</b><small class="build-badge" id="buildVersion">v4.1.0</small><em>drug empire idle</em></div>
+  <div class="logo" onclick="openNameModal()">💵 <span>NARCOS</span><b>EMPIRE</b><small class="build-badge" id="buildVersion">v4.1.1</small><em>drug empire idle</em></div>
   <div class="hud">
     <button class="chip name-chip" id="btnName" onclick="openNameModal()">
       <span class="chip-emoji" id="hudAvatar">💵</span><span id="hudName">BOSS</span>
@@ -50,7 +50,7 @@
 
 <!-- ======= SIDEBAR NAV (desktop) ======= -->
 <nav id="sidebar">
-  <button data-view="grow" class="on" onclick="setView('grow')">💵<span>Empire</span></button>
+  <button data-view="grow" class="on empire-nav" onclick="setView('grow')"><img class="empire-tab-icon" src="empire-tab-icon.webp" alt=""><span>Empire</span></button>
   <button data-view="mini" onclick="setView('mini')">🕹️<span>Mini Games</span></button>
   <button data-view="quests" onclick="setView('quests')">🎯<span>Contracts</span></button>
   <button data-view="board" onclick="setView('board')">🏆<span>Cartel Board</span></button>
@@ -488,7 +488,7 @@
 
 <!-- ======= BOTTOM NAV (mobile) ======= -->
 <nav class="bottom-nav" id="bottomNav">
-  <button data-view="grow" class="on" onclick="setView('grow')">💵<span>Empire</span></button>
+  <button data-view="grow" class="on empire-nav" onclick="setView('grow')"><img class="empire-tab-icon" src="empire-tab-icon.webp" alt=""><span>Empire</span></button>
   <button data-view="mini" onclick="setView('mini')">🕹️<span>Mini</span></button>
   <button data-view="quests" onclick="setView('quests')">🎯<span>Contracts</span></button>
   <button data-view="board" onclick="setView('board')">🏆<span>Cartel Board</span></button>

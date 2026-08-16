@@ -16,7 +16,7 @@ const G = window.G = {
   bossTimer:null, bossTicker:null
 };
 
-const BUILD_VERSION='4.1.0';
+const BUILD_VERSION='4.1.1';
 const MAX_ECONOMY_VALUE=999999999999;
 const MAX_PRODUCT_GRAMS=1000000000;
 const STANDARD_GRAM_PRICE=80;
