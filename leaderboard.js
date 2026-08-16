@@ -2,13 +2,13 @@
 /* ============================================================
    NARCOS EMPIRE — global cartel board
    Free, no-login cloud storage via MantleDB (keyless JSON store).
-   Shows player level, rebuilds (connections), skin avatar and a
-   live 💎 balance that updates in real time when you buy things.
+   Ranks live player net worth: cash, product, assets and permanent value.
    Fictional idle game
    ============================================================ */
 
 const Leaderboard = (()=>{
   const URL='https://mantledb.sh/v2/narcos/leaderboard';
+  const LOCAL_TEST=location.hostname==='localhost'||location.hostname==='127.0.0.1'||location.hostname==='::1';
 
   let scores=[];
   let myId='';
@@ -41,6 +41,9 @@ const Leaderboard = (()=>{
       id:getMyId(),
       name:(G.save.name||'Player').slice(0,16),
       melons:Math.floor(G.save.lifetimeEarned||0),
+      product:Math.floor(G.save.melons||0),
+      cash:Math.floor(G.save.cash||0),
+      worth:Math.floor(typeof netWorth==='function'?netWorth():0),
       seeds:G.save.totalSeeds||0,
       asc:G.save.ascensions||0,
       level:G.save.level||1,
@@ -50,12 +53,19 @@ const Leaderboard = (()=>{
     };
   }
 
+  function entryWorth(s){
+    if(Number.isFinite(s.worth)) return Math.max(0,Math.min(999999999999,s.worth));
+    const legacy=Math.max(0,Number(s.melons)||0), peak=Math.log10(legacy+1);
+    return Math.min(999999999999,Math.floor(Math.max(0,peak-5)*25000000+Math.min(legacy,1e9)*33.6));
+  }
+
   async function fetchBoard(){
     try{
       const r=await fetch(URL,{cache:'no-store'});
       if(!r.ok) throw new Error('HTTP '+r.status);
       const data=await r.json();
       scores=(data&&Array.isArray(data.scores))?data.scores:[];
+      scores.sort((a,b)=>entryWorth(b)-entryWorth(a));
       setStatus(scores.length?('🌐 Synced · '+scores.length+' cartels'):'🌐 Be the first on the board!');
       render();
     }catch(e){
@@ -65,14 +75,14 @@ const Leaderboard = (()=>{
   }
 
   function submit(force){
-    if(!initDone||!G.save.name) return;
+    if(LOCAL_TEST||!initDone||!G.save.name) return;
     const now=Date.now();
     if(!force&&now-lastSubmit<15000) return;
     lastSubmit=now;
     const entry=myEntry();
     const arr=scores.filter(s=>s.id!==entry.id);
     arr.push(entry);
-    arr.sort((a,b)=>b.melons-a.melons);
+    arr.sort((a,b)=>entryWorth(b)-entryWorth(a));
     scores=arr.slice(0,250);
     fetch(URL,{
       method:'POST',
@@ -85,7 +95,7 @@ const Leaderboard = (()=>{
   let lastSubmitValue=0;
   function throttledSubmit(){
     if(!initDone) return;
-    const v=G.save.lifetimeEarned||0;
+    const v=typeof netWorth==='function'?netWorth():0;
     const c=G.save.crystals||0;
     if(v>lastSubmitValue*1.001+5||v<lastSubmitValue*0.5||Math.abs(c-lastSubmitCrystals)>2){
       lastSubmitValue=v;
@@ -97,7 +107,7 @@ const Leaderboard = (()=>{
   let lastSubmitCrystals=0;
 
   function bump(){
-    lastSubmitValue=G.save.lifetimeEarned||0;
+    lastSubmitValue=typeof netWorth==='function'?netWorth():0;
     lastSubmitCrystals=G.save.crystals||0;
     submit(true);
   }
@@ -145,7 +155,7 @@ const Leaderboard = (()=>{
     const list=document.getElementById('lbList');
     if(!list) return;
     if(!scores.length){
-      list.innerHTML='<div class="lb-empty">No product moved yet — be the first! 💵</div>';
+      list.innerHTML='<div class="lb-empty">No cartel net worth posted yet — be the first! 💵</div>';
       return;
     }
     const me=myEntry();
@@ -155,19 +165,19 @@ const Leaderboard = (()=>{
     scores.slice(0,100).forEach((s,i)=>{
       if(s.id===me.id) myRank=i+1;
       const extra=(s.asc>0?('⭐ '+s.asc+' · 🗝️ '+fmt(s.seeds||0)):'🗝️ '+fmt(s.seeds||0));
-      const live=s.id===me.id?(' · '+(typeof fmtW==='function'?fmtW(Math.floor(G.save.melons||0)):fmt(Math.floor(G.save.melons||0)))+' now'):'';
+      const live=s.id===me.id?(' · '+fmtCash(G.save.cash||0)+' cash'):'';
       html+='<div class="lb-row'+(s.id===me.id?' me':'')+'">'+
         '<span class="lb-pos">'+(i<3?medals[i]:'#'+(i+1))+'</span>'+
         '<span class="lb-name"><span>'+(s.skin||'💵')+'</span>'+escapeHtml(s.name||'?')+'<span class="lv-badge">Lv'+(s.level||1)+'</span></span>'+
         '<span class="lb-extra">'+extra+'</span>'+
-        '<span class="lb-score">'+(typeof fmtW==='function'?fmtW(s.melons):fmt(s.melons))+'</span>'+
+        '<span class="lb-score">'+fmtCash(entryWorth(s))+'</span>'+
         '<span class="lb-crys">💎 '+fmt(s.crystals||0)+live+'</span></div>';
     });
     list.innerHTML=html;
     if(myRank<0) myRank=scores.findIndex(s=>s.id===me.id)+1;
     if(myRank<=0) myRank=scores.length+1;
     G.myRank=myRank;
-    setStatus('You are #'+myRank+' of '+scores.length+' · refresh every 20s ⟳');
+    setStatus('You are #'+myRank+' of '+scores.length+' by net worth · live every 20s ⟳');
   }
 
   function refresh(){ fetchBoard(); }

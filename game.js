@@ -16,6 +16,11 @@ const G = window.G = {
   bossTimer:null, bossTicker:null
 };
 
+const BUILD_VERSION='4.0.0';
+const MAX_ECONOMY_VALUE=999999999999;
+const MAX_PRODUCT_GRAMS=1000000000;
+const STANDARD_GRAM_PRICE=80;
+
 function $(id){ return document.getElementById(id); }
 
 /* ---------------- data ---------------- */
@@ -24,26 +29,26 @@ const BUILDINGS=[
   {id:'vine',    name:'Street Corner',   emoji:'🌿', cost:15,    rate:0.1,  cb:0.1},
   {id:'basket',  name:'Corner Dealer',   emoji:'🧑‍💼', cost:100,   rate:1,    cb:0.5},
   {id:'truck',   name:'Grow House',      emoji:'🏡', cost:1100,  rate:8,    cb:4},
-  {id:'juice',   name:'Coke Kitchen',    emoji:'🧪', cost:12000, rate:47,   cb:15},
-  {id:'farm',    name:'Stash House',     emoji:'🏚️', cost:130000, rate:260,  cb:60},
-  {id:'factory', name:'Refinery Lab',    emoji:'🏭', cost:1.4e6,  rate:1400, cb:250},
-  {id:'rocket',  name:'Smuggler Boat',   emoji:'🚤', cost:20e6,   rate:7800, cb:1200},
-  {id:'moon',    name:'Drug Tunnel',     emoji:'🕳️', cost:330e6,  rate:44000, cb:5000},
-  {id:'ship',    name:'Private Jet',     emoji:'✈️', cost:5.1e9,  rate:260000, cb:22000},
-  {id:'planet',  name:'Money Laundry',   emoji:'🏦', cost:75e9,   rate:1.6e6, cb:100000},
-  {id:'galaxy',  name:'Cartel Army',     emoji:'💂', cost:1e12,   rate:1e7,   cb:5e5},
-  {id:'universe',name:'Island Empire',   emoji:'🏝️', cost:14e12,  rate:6.5e7, cb:2.5e6},
-  {id:'time',    name:'Global Network',  emoji:'🌎', cost:2e14,   rate:5e8,   cb:1.5e7},
-  {id:'void',    name:'Satellite Cartel',emoji:'🛰️', cost:3e15,   rate:4e9,   cb:1e8},
-  {id:'angels',  name:'Cartel Nation',   emoji:'🏴', cost:5e16,   rate:3.5e10, cb:8e8},
-  {id:'infinity',name:'Narco Empire',    emoji:'👑', cost:8e17,  rate:2.5e11, cb:5e9}
+  {id:'juice',   name:'Coke Kitchen',    emoji:'🧪', cost:12000, rate:25,   cb:12},
+  {id:'farm',    name:'Stash House',     emoji:'🏚️', cost:130000, rate:80,  cb:35},
+  {id:'factory', name:'Refinery Lab',    emoji:'🏭', cost:1.4e6,  rate:250, cb:100},
+  {id:'rocket',  name:'Smuggler Boat',   emoji:'🚤', cost:20e6,   rate:1000, cb:350},
+  {id:'moon',    name:'Drug Tunnel',     emoji:'🕳️', cost:330e6,  rate:3000, cb:900},
+  {id:'ship',    name:'Private Jet',     emoji:'✈️', cost:5.1e9,  rate:8000, cb:2200},
+  {id:'planet',  name:'Money Laundry',   emoji:'🏦', cost:75e9,   rate:15000, cb:4000},
+  {id:'galaxy',  name:'Cartel Army',     emoji:'💂', cost:1e12,   rate:30000, cb:8000},
+  {id:'universe',name:'Island Empire',   emoji:'🏝️', cost:14e12,  rate:60000, cb:15000},
+  {id:'time',    name:'Global Network',  emoji:'🌎', cost:2e14,   rate:120000, cb:30000},
+  {id:'void',    name:'Satellite Cartel',emoji:'🛰️', cost:3e15,   rate:250000, cb:60000},
+  {id:'angels',  name:'Cartel Nation',   emoji:'🏴', cost:5e16,   rate:500000, cb:120000},
+  {id:'infinity',name:'Narco Empire',    emoji:'👑', cost:8e17,  rate:1000000, cb:250000}
 ];
 
 const RANKS=[
-  [0,'Street Pusher','🐀'],[1e3,'Corner Boy','🥾'],[1e5,'Runner','🏃'],
-  [1e7,'Distributor','📦'],[1e9,'Local Kingpin','🎩'],[1e11,'Cartel Boss','👔'],
-  [1e13,'Cartel King','🏝️'],[1e15,'Narco Prince','💎'],[1e17,'Narco King','👑'],
-  [1e19,'Narco Legend','⭐'],[1e21,'Narco Empire','🏆'],[1e24,'Biggest Narco on Earth','🌎']
+  [0,'Street Pusher','🐀'],[25000,'Corner Boy','🥾'],[250000,'Runner','🏃'],
+  [2500000,'Distributor','📦'],[25000000,'Local Kingpin','🎩'],[100000000,'Cartel Boss','👔'],
+  [500000000,'Cartel King','🏝️'],[2500000000,'Narco Prince','💎'],[10000000000,'Narco King','👑'],
+  [50000000000,'Narco Legend','⭐'],[250000000000,'Narco Empire','🏆'],[990000000000,'Biggest Narco on Earth','🌎']
 ];
 
 
@@ -212,7 +217,7 @@ function buildGeneratedQuests(){
   });
   RANKS.forEach((r,i)=>{
     if(i===0) return;
-    QUESTS.push({id:'q_rank'+i,e:r[2],n:'Reach '+r[1],d:'Reach '+fmtW(r[0])+' lifetime product',cry:3+i*2,xp:30+i*20,need:()=>G.save.lifetimeEarned>=r[0]});
+    QUESTS.push({id:'q_rank'+i,e:r[2],n:'Reach '+r[1],d:'Reach '+fmtCash(r[0])+' net worth',cry:3+i*2,xp:30+i*20,need:()=>netWorth()>=r[0]});
   });
 }
 
@@ -330,16 +335,16 @@ function makeUpgrades(){
   ];
   clicks.forEach(c=>list.push({id:c[0],emoji:c[1],name:c[2],desc:c[3],cost:c[4],need:()=>G.save.totalClicks>=c[5],kind:'click',mult:c[6]}));
   const globs=[
-    ['g1','🧲','Product Magnet','Double ALL production',2e4,1e4,2],
-    ['g2','⚗️','Growth Formula','Double ALL production',2e6,5e5,2],
-    ['g3','🛰️','Orbital Sunshine','Double ALL production',2e8,2e7,2],
-    ['g4','🔭','Deep Space Rays','Double ALL production',2e10,1e9,2],
-    ['g5','🪐','Planetary Bounty','Double ALL production',2e12,5e10,2],
-    ['g6','🌠','Supernova Harvest','Double ALL production',2e14,2.5e12,2],
-    ['g7','🕳️','Black Hole Lab','TRIPLE ALL production',2e16,1e14,3],
-    ['g8','👽','Alien Cartel Tech','TRIPLE ALL production',2e18,5e15,3]
+    ['g1','🧲','Product Magnet','Double ALL production',2e4,25000,2],
+    ['g2','⚗️','Growth Formula','Double ALL production',2e6,250000,2],
+    ['g3','🛰️','Orbital Sunshine','Double ALL production',2e8,2.5e6,2],
+    ['g4','🔭','Deep Space Rays','Double ALL production',2e10,25e6,2],
+    ['g5','🪐','Planetary Bounty','Double ALL production',2e12,100e6,2],
+    ['g6','🌠','Supernova Harvest','Double ALL production',2e14,500e6,2],
+    ['g7','🕳️','Black Hole Lab','TRIPLE ALL production',2e16,2.5e9,3],
+    ['g8','👽','Alien Cartel Tech','TRIPLE ALL production',2e18,10e9,3]
   ];
-  globs.forEach(g=>list.push({id:g[0],emoji:g[1],name:g[2],desc:g[3],cost:g[4],need:()=>G.save.lifetimeEarned>=g[5],kind:'global',mult:g[6]}));
+  globs.forEach(g=>list.push({id:g[0],emoji:g[1],name:g[2],desc:g[3],cost:g[4],need:()=>netWorth()>=g[5],kind:'global',mult:g[6]}));
   return list;
 }
 const UPGRADES=makeUpgrades();
@@ -353,10 +358,10 @@ const ACH=[
   {id:'ml1',e:'📦',n:'First Package',d:'Package 10K product (lifetime)',g:1,need:()=>G.save.lifetimeEarned>=1e4},
   {id:'ml2',e:'🧪',n:'Product Millionaire',d:'Package 1M product',g:2,need:()=>G.save.lifetimeEarned>=1e6},
   {id:'ml3',e:'🚀',n:'Orbital Haul',d:'Package 1B product',g:4,need:()=>G.save.lifetimeEarned>=1e9},
-  {id:'ml4',e:'🌌',n:'Global Kingpin',d:'Package 1T product',g:6,need:()=>G.save.lifetimeEarned>=1e12},
-  {id:'ml5',e:'⭐',n:'Stellar Boss',d:'Package 1Qa product',g:10,need:()=>G.save.lifetimeEarned>=1e15},
-  {id:'ml6',e:'👑',n:'Narco Monarch',d:'Package 1Qi product',g:16,need:()=>G.save.lifetimeEarned>=1e18},
-  {id:'ml7',e:'🕶️',n:'Narco Overlord',d:'Package 1Sx product',g:25,need:()=>G.save.lifetimeEarned>=1e21},
+  {id:'ml4',e:'🌌',n:'Global Kingpin',d:'Reach $100M net worth',g:6,need:()=>netWorth()>=1e8},
+  {id:'ml5',e:'⭐',n:'Syndicate Boss',d:'Reach $250M net worth',g:10,need:()=>netWorth()>=2.5e8},
+  {id:'ml6',e:'👑',n:'Narco Monarch',d:'Reach $500M net worth',g:16,need:()=>netWorth()>=5e8},
+  {id:'ml7',e:'🕶️',n:'Narco Overlord',d:'Reach $900M net worth',g:25,need:()=>netWorth()>=9e8},
   {id:'bd1',e:'🧺',n:'Builder',d:'Own 10 buildings',g:1,need:()=>totalBuildings()>=10},
   {id:'bd2',e:'🏗️',n:'Construction Crew',d:'Own 50 buildings',g:2,need:()=>totalBuildings()>=50},
   {id:'bd3',e:'🏙️',n:'Cartel Metropolis',d:'Own 200 buildings',g:4,need:()=>totalBuildings()>=200},
@@ -433,10 +438,47 @@ function fmtW(n){
   return (v>=100?v.toFixed(0):v>=10?v.toFixed(1):v.toFixed(2))+WU[i].n;
 }
 window.fmtW=fmtW;
+function fmtCash(n){
+  n=clamp(Number(n)||0,0,MAX_ECONOMY_VALUE);
+  if(n<1000) return '$'+Math.floor(n).toLocaleString();
+  if(n<1e6) return '$'+(n/1e3).toFixed(n<1e4?1:0)+'K';
+  if(n<1e9) return '$'+(n/1e6).toFixed(n<1e7?1:0)+'M';
+  return '$'+(n/1e9).toFixed(n<1e10?2:n<1e11?1:0)+'B';
+}
+window.fmtCash=fmtCash;
+
+function cashCostFromProduct(grams){ return Math.min(50000000000,Math.ceil(1200*Math.pow(Math.max(1,grams)/15,.42))); }
+function marketPrice(){
+  const bucket=Math.floor(Date.now()/300000);
+  return Math.max(68,Math.min(92,Math.round(STANDARD_GRAM_PRICE*(1+Math.sin(bucket*2.17)*.15))));
+}
+function buildingAssetValue(){
+  let total=0;
+  for(const b of BUILDINGS){
+    const n=G.save.buildings[b.id]||0, base=cashCostFromProduct(b.cost);
+    if(n) total+=base*(Math.pow(1.17,n)-1)/.17*.65;
+    if(total>=MAX_ECONOMY_VALUE) return MAX_ECONOMY_VALUE;
+  }
+  return total;
+}
+function otherAssetValue(){
+  let total=(G.save.inv||0)*1500;
+  for(const u of PERSONNEL) total+=personnelOwned(u.id)*cashCostFromProduct(u.cost)*.5;
+  for(const w of WEAPONS) if(weaponOwned(w.id)) total+=cashCostFromProduct(w.cost)*.65;
+  for(const item of ITEMS){ const count=G.save.coll[item.id]||0; total+=count*RARITY[item.r].v*500; }
+  return Math.min(MAX_ECONOMY_VALUE,total);
+}
+function netWorth(){
+  if(!G.save) return 0;
+  const liquidation=(G.save.melons||0)*marketPrice()*.42;
+  const permanent=(G.save.totalSeeds||0)*25000+(G.save.crystals||0)*500;
+  return Math.min(MAX_ECONOMY_VALUE,Math.floor((G.save.cash||0)+liquidation+buildingAssetValue()+otherAssetValue()+permanent));
+}
+window.netWorth=netWorth;
 
 function personnelOwned(id){ return (G.save.cartel&&G.save.cartel.p&&G.save.cartel.p[id])||0; }
 function weaponOwned(id){ return !!(G.save.cartel&&G.save.cartel.w&&G.save.cartel.w.includes(id)); }
-function personnelCost(u,ownedN,n){ n=n||1; return u.cost*Math.pow(1.15,ownedN)*(Math.pow(1.15,n)-1)/0.15; }
+function personnelCost(u,ownedN,n){ n=n||1; return cashCostFromProduct(u.cost)*Math.pow(1.15,ownedN)*(Math.pow(1.15,n)-1)/0.15; }
 function cartelPower(){
   let p=0; for(const u of PERSONNEL) p+=personnelOwned(u.id)*u.power;
   let m=1; for(const w of WEAPONS) if(weaponOwned(w.id)) m*=w.pMult;
@@ -489,7 +531,7 @@ function owned(id){ return G.save.upgrades.includes(id); }
 function level(id){ return G.save.asc[id]||0; }
 function shopLvl(id){ return G.save.shop[id]||0; }
 function totalBuildings(){ return BUILDINGS.reduce((s,b)=>s+(G.save.buildings[b.id]||0),0); }
-function buildingCost(b,ownedN,n){ return b.cost*Math.pow(1.17,ownedN)*(Math.pow(1.17,n)-1)/0.17; }
+function buildingCost(b,ownedN,n){ return cashCostFromProduct(b.cost)*Math.pow(1.17,ownedN)*(Math.pow(1.17,n)-1)/0.17; }
 function buildingRate(b){ return b.rate*(owned('b_'+b.id+'_10')?2:1)*(owned('b_'+b.id+'_50')?2:1); }
 
 function perSecRaw(){
@@ -529,23 +571,28 @@ function autoPerSec(){ return (shopLvl('sh1')+level('as8'))*clickPower(); }
 function frenzyMult(){ return (Date.now()<G.frenzyUntil)?7:1; }
 function eventProdMult(){ return (G.evt&&(G.evt.id==='meteor'||G.evt.id==='turbo'))?2:1; }
 function effectivePerSec(){ return perSecRaw()*globalMult()*seedMult()*frenzyMult()*eventProdMult()+autoPerSec(); }
-function calcSeedGain(){ return Math.floor(Math.pow(G.save.runEarned/1e7,0.35)*(1+0.25*level('as2'))); }
+function calcSeedGain(){
+  const runValue=Math.min(MAX_ECONOMY_VALUE,(G.save.runEarned||0)*STANDARD_GRAM_PRICE+(G.save.runCashEarned||0));
+  return Math.min(10000,Math.floor(Math.pow(runValue/500000,.38)*(1+0.25*level('as2'))));
+}
 function rankInfo(){
   let i=0;
-  for(let r=0;r<RANKS.length;r++) if(G.save.lifetimeEarned>=RANKS[r][0]) i=r;
+  const worth=netWorth();
+  for(let r=0;r<RANKS.length;r++) if(worth>=RANKS[r][0]) i=r;
   const cur=RANKS[i],next=RANKS[i+1]||null;
   let pct=100;
-  if(next){ pct=(G.save.lifetimeEarned-cur[0])/(next[0]-cur[0])*100; pct=Math.max(0,Math.min(100,pct)); }
-  return {name:cur[1],emoji:cur[2],next:next?next[0]:null,nextName:next?next[1]:null,pct:i,hasNext:!!next};
+  if(next){ pct=(worth-cur[0])/(next[0]-cur[0])*100; pct=Math.max(0,Math.min(100,pct)); }
+  return {name:cur[1],emoji:cur[2],next:next?next[0]:null,nextName:next?next[1]:null,pct,hasNext:!!next};
 }
 
-function addMelons(n){ if(n<=0)return; G.save.melons+=n; G.save.runEarned+=n; G.save.lifetimeEarned+=n; }
+function addMelons(n){ if(n<=0)return; const room=MAX_PRODUCT_GRAMS-G.save.melons,added=Math.max(0,Math.min(n,room)); G.save.melons+=added; G.save.runEarned=Math.min(MAX_PRODUCT_GRAMS,G.save.runEarned+added); G.save.lifetimeEarned=Math.min(MAX_PRODUCT_GRAMS,G.save.lifetimeEarned+added); }
+function addCash(n,earned){ if(!(n>0)) return; G.save.cash=Math.min(MAX_ECONOMY_VALUE,(G.save.cash||0)+n); if(earned){ G.save.runCashEarned=Math.min(MAX_ECONOMY_VALUE,(G.save.runCashEarned||0)+n); G.save.lifetimeCash=Math.min(MAX_ECONOMY_VALUE,(G.save.lifetimeCash||0)+n); } }
 function addCrystals(n){ if(!(n>0)) return; G.save.crystals+=n; G.save.crystalsEarned=(G.save.crystalsEarned||0)+n; }
 
 /* ---------------- save/load ---------------- */
 
 function defaultSave(){
-  return {v:2,name:'',playerId:'',melons:0,runEarned:0,lifetimeEarned:0,buildings:{},upgrades:[],
+  return {v:3,name:'',playerId:'',melons:0,runEarned:0,lifetimeEarned:0,cash:0,runCashEarned:0,lifetimeCash:0,buildings:{},upgrades:[],
     seeds:0,totalSeeds:0,ascensions:0,crystals:0,crystalsEarned:0,asc:{},shop:{},ach:[],
     totalClicks:0,goldenClicks:0,maxCombo:0,offlineEarns:0,
     lastDaily:null,dailyStreak:0,dailyClaimed:true,lastOnline:Date.now(),sound:true,
@@ -566,6 +613,7 @@ function loadGame(){
   try{ const raw=localStorage.getItem('narcos_save'); if(raw) s=JSON.parse(raw);
     if(!s){ const old=localStorage.getItem('meloverse_save'); if(old){ s=JSON.parse(old); } } }catch(e){}
   G.save=Object.assign(defaultSave(),s||{});
+  migrateEconomySave();
   G.save.buildings=G.save.buildings||{};
   G.save.upgrades=G.save.upgrades||[];
   G.save.asc=G.save.asc||{};
@@ -595,6 +643,16 @@ function loadGame(){
   G.save.xp=G.save.xp||0;
   G.soundOn=G.save.sound!==false;
   applySkin();
+}
+function migrateEconomySave(){
+  if((G.save.v||2)>=3){ G.save.cash=clamp(G.save.cash||0,0,MAX_ECONOMY_VALUE); return; }
+  const oldLifetime=Math.max(0,Number(G.save.lifetimeEarned)||0), peak=Math.log10(oldLifetime+1);
+  G.save.cash=Math.min(MAX_ECONOMY_VALUE,Math.max(G.save.cash||0,Math.floor(Math.max(0,peak-5)*25000000)));
+  G.save.melons=Math.min(MAX_PRODUCT_GRAMS,Math.max(0,Number(G.save.melons)||0),20000000+peak*1000000);
+  G.save.runEarned=Math.min(MAX_PRODUCT_GRAMS,Math.max(0,Number(G.save.runEarned)||0),G.save.melons+50000000);
+  G.save.lifetimeEarned=Math.min(MAX_PRODUCT_GRAMS,Math.max(G.save.runEarned,Math.min(oldLifetime,MAX_PRODUCT_GRAMS)));
+  G.save.runCashEarned=0; G.save.lifetimeCash=G.save.cash; G.save.v=3;
+  G.save.economyMigratedAt=Date.now();
 }
 function saveGame(){
   G.save.lastOnline=Date.now();
@@ -679,7 +737,7 @@ function updateEmpireMap(){
   const power=Math.floor(cartelPower());
   const activeThreat=G.save.boss&&G.save.boss.id&&G.save.boss.fightUntil>Date.now();
   const incomeEl=$('mapIncome'), territoryEl=$('mapTerritory'), powerEl=$('mapPower'), threatEl=$('mapThreat');
-  if(incomeEl) incomeEl.textContent='$'+fmt(income)+'/s';
+  if(incomeEl) incomeEl.textContent=fmtW(income)+'/s';
   if(territoryEl) territoryEl.textContent=fmt(sites)+' site'+(sites===1?'':'s');
   if(powerEl) powerEl.textContent=fmt(power);
   if(threatEl){
@@ -697,7 +755,7 @@ function scrollGameIntoView(sel,pad){
 window.scrollGameIntoView=scrollGameIntoView;
 function switchGrowTab(t){
   document.querySelectorAll('#growTabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
-  ['farm','cartel','upgrades','ascend','shop'].forEach(x=>{ const el=$('tab-'+x); if(el) el.classList.toggle('on',x===t); }); if(t==='cartel') renderCartel();
+  ['farm','cartel','upgrades','market','ascend','shop'].forEach(x=>{ const el=$('tab-'+x); if(el) el.classList.toggle('on',x===t); }); if(t==='cartel') renderCartel(); if(t==='market') renderMarketplace();
 }
 function switchMiniTab(m){
   document.querySelectorAll('#miniTabs button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
@@ -710,10 +768,12 @@ function refreshHud(){
   $('hudName').textContent=G.save.name||'PLAYER';
   $('hudCrystals').textContent=fmt(G.save.crystals);
   $('hudSeeds').textContent=fmt(G.save.seeds);
+  $('hudCash').textContent=fmtCash(G.save.cash||0);
   $('hudLevel').textContent='Lv'+G.save.level;
   $('hudCrateN').textContent=G.save.inv;
   const r=rankInfo();
   $('hudRankEmoji')&&($('hudRankEmoji').textContent=r.emoji);
+  $('buildVersion')&&($('buildVersion').textContent='v'+BUILD_VERSION);
   updateRouletteUI();
   updateEmpireMap();
   updateFieldJobs();
@@ -760,22 +820,22 @@ function renderCartel(){
   PERSONNEL.forEach(u=>{
     const ownedN=personnelOwned(u.id), n=G.buyMult;
     const cost=personnelCost(u,ownedN,n);
-    const can=G.save.melons>=cost;
+    const can=G.save.cash>=cost;
     html+='<div class="up-card'+(can?' afford':'')+'" onclick="buyPersonnel(\''+u.id+'\')">';
     html+='<div class="u-emoji">'+u.emoji+'</div>';
     html+='<div class="u-info"><div class="u-name">'+u.name+' <span class="u-lv">×'+fmt(ownedN)+'</span></div>';
     html+='<div class="u-desc">⚔️'+fmt(u.power)+' · 🛡️'+fmt(u.def)+' · +'+(u.prod*100)+'% prod each</div></div>';
-    html+='<div class="u-cost '+(can?'':'no')+'">💵 '+fmtW(cost)+'</div></div>';
+    html+='<div class="u-cost '+(can?'':'no')+'">'+fmtCash(cost)+'</div></div>';
   });
   html+='<div class="ascend-note" style="margin-top:14px">🔫 Arsenal — one-time weapons that multiply army power</div>';
   WEAPONS.forEach(w=>{
     const has=weaponOwned(w.id);
-    const can=!has&&G.save.melons>=w.cost;
+    const weaponCost=cashCostFromProduct(w.cost), can=!has&&G.save.cash>=weaponCost;
     html+='<div class="up-card'+(has?' bought':can?' afford':'')+'" onclick="buyWeapon(\''+w.id+'\')">';
     html+='<div class="u-emoji">'+(has?'✅':w.emoji)+'</div>';
     html+='<div class="u-info"><div class="u-name">'+w.name+(has?' <span class="u-lv">OWNED</span>':'')+'</div>';
     html+='<div class="u-desc">Power ×'+w.pMult+' · Defense ×'+w.dMult+'</div></div>';
-    html+='<div class="u-cost '+(can||has?'':'no')+'">'+(has?'OWNED':('💵 '+fmtW(w.cost)))+'</div></div>';
+    html+='<div class="u-cost '+(can||has?'':'no')+'">'+(has?'OWNED':fmtCash(weaponCost))+'</div></div>';
   });
   wrap.innerHTML=html;
 }
@@ -783,8 +843,8 @@ function buyPersonnel(id){
   const u=PERSONNEL.find(x=>x.id===id); if(!u) return;
   const ownedN=personnelOwned(id), n=G.buyMult;
   const cost=personnelCost(u,ownedN,n);
-  if(G.save.melons<cost) return;
-  G.save.melons-=cost;
+  if(G.save.cash<cost) return;
+  G.save.cash-=cost;
   G.save.cartel.p[id]=ownedN+n;
   beepBuy(); gainXp(3*n);
   if(ownedN===0) toast('Hired your first '+u.name+'! '+u.emoji,'🏴');
@@ -794,8 +854,8 @@ function buyPersonnel(id){
   Leaderboard&&Leaderboard.bump&&Leaderboard.bump();
 }
 function buyWeapon(id){
-  const w=WEAPONS.find(x=>x.id===id); if(!w||weaponOwned(id)||G.save.melons<w.cost) return;
-  G.save.melons-=w.cost;
+  const w=WEAPONS.find(x=>x.id===id),cost=w?cashCostFromProduct(w.cost):Infinity; if(!w||weaponOwned(id)||G.save.cash<cost) return;
+  G.save.cash-=cost;
   G.save.cartel.w.push(id);
   beepBuy(); gainXp(25);
   toast(w.name+' armed! Power ×'+w.pMult+' '+w.emoji,'🔫');
@@ -812,7 +872,7 @@ function renderBuildings(){
     const card=document.createElement('div'); card.className='bld-card'; card.dataset.id=b.id;
     card.innerHTML='<div class="bld-emoji">'+b.emoji+'</div>'+
       '<div class="bld-info"><div class="bld-name">'+b.name+'</div><div class="bld-sub"></div></div>'+
-      '<div class="bld-right"><div class="bld-cost">💵 <span></span></div><div class="bld-owned">0</div></div>';
+      '<div class="bld-right"><div class="bld-cost"><span></span></div><div class="bld-owned">0</div></div>';
     card.addEventListener('click',()=>buyBuilding(b.id));
     wrap.appendChild(card); G.bldRefs[b.id]=card;
   }
@@ -824,17 +884,17 @@ function updateBuildings(){
     const ownedN=G.save.buildings[b.id]||0, n=G.buyMult;
     const cost=buildingCost(b,ownedN,n);
     card.querySelector('.bld-sub').textContent='+'+fmtW(buildingRate(b))+'/s each · '+fmt(ownedN)+' owned';
-    card.querySelector('.bld-cost span').textContent=fmtW(cost);
+    card.querySelector('.bld-cost span').textContent=fmtCash(cost);
     card.querySelector('.bld-owned').textContent=fmt(ownedN);
-    card.classList.toggle('afford',G.save.melons>=cost);
+    card.classList.toggle('afford',G.save.cash>=cost);
   }
 }
 function buyBuilding(id){
   const b=BUILDINGS.find(x=>x.id===id);
   const ownedN=G.save.buildings[id]||0, n=G.buyMult;
   const cost=buildingCost(b,ownedN,n);
-  if(G.save.melons<cost) return;
-  G.save.melons-=cost;
+  if(G.save.cash<cost) return;
+  G.save.cash-=cost;
   G.save.buildings[id]=ownedN+n;
   if(ownedN===0) toast('Opened your first '+b.name+'! '+b.emoji,'🎉');
   beepBuy(); gainXp(5*n); dropCrateChance(0.03*n);
@@ -851,21 +911,59 @@ function renderUpgrades(){
   const vis=UPGRADES.filter(u=>u.need());
   if(!vis.length) html='<div class="lb-empty">Buy more operations &amp; tap more to unlock upgrades!</div>';
   vis.forEach(u=>{
-    const has=owned(u.id), can=!has&&G.save.melons>=u.cost;
+    const cashCost=cashCostFromProduct(u.cost), has=owned(u.id), can=!has&&G.save.cash>=cashCost;
     html+='<div class="up-card'+(has?' bought':can?' afford':'')+'" onclick="buyUpgrade(\''+u.id+'\')">'+
       '<div class="u-emoji">'+(has?'✅':u.emoji)+'</div>'+
       '<div class="u-info"><div class="u-name">'+u.name+'</div><div class="u-desc">'+u.desc+'</div></div>'+
-      '<div class="u-cost '+(can?'':'no')+'">'+(has?'OWNED':('💵 '+fmtW(u.cost)))+'</div></div>';
+      '<div class="u-cost '+(can?'':'no')+'">'+(has?'OWNED':fmtCash(cashCost))+'</div></div>';
   });
   wrap.innerHTML=html;
 }
 function buyUpgrade(id){
-  const u=UPGRADES.find(x=>x.id===id); if(!u||owned(id)||G.save.melons<u.cost) return;
-  G.save.melons-=u.cost; G.save.upgrades.push(id);
+  const u=UPGRADES.find(x=>x.id===id),cost=u?cashCostFromProduct(u.cost):Infinity; if(!u||owned(id)||G.save.cash<cost) return;
+  G.save.cash-=cost; G.save.upgrades.push(id);
   beepBuy(); toast(u.name+' bought! '+u.emoji,'🔧'); gainXp(10);
   reRenderPanels(); updateBuildings(); updateStats();
   Leaderboard&&Leaderboard.bump&&Leaderboard.bump();
 }
+
+/* ---------------- marketplace / cash economy ---------------- */
+
+const MARKET_CHANNELS={
+  street:{name:'Street network',emoji:'🚕',cap:100,mult:1.05,desc:'Best price · up to 100g per deal'},
+  regional:{name:'Regional brokers',emoji:'🚚',cap:5000,mult:.72,desc:'Bulk price · up to 5kg per deal'},
+  export:{name:'Export route',emoji:'🚢',cap:Infinity,mult:.42,desc:'Wholesale price · sell any quantity'}
+};
+function renderMarketplace(){
+  const wrap=$('tab-market'); if(!wrap) return;
+  const spot=marketPrice(), worth=netWorth();
+  let html='<div class="market-hero"><div><span class="eyebrow">LIVE UNDERWORLD EXCHANGE</span><h2>'+fmtW(G.save.melons)+' product ready</h2><p>Cash '+fmtCash(G.save.cash)+' · Net worth <b>'+fmtCash(worth)+'</b></p></div><div class="market-ticker"><span>REFERENCE / GRAM</span><b>$'+spot+'</b><small>updates every 5 min</small></div></div>';
+  html+='<div class="market-grid">';
+  Object.keys(MARKET_CHANNELS).forEach(id=>{ const c=MARKET_CHANNELS[id], grams=Math.min(G.save.melons,c.cap), price=Math.round(spot*c.mult), value=Math.floor(grams*price); html+='<button class="market-card" onclick="sellProduct(\''+id+'\')"><span>'+c.emoji+'</span><div><b>'+c.name+'</b><small>'+c.desc+'</small><em>$'+price+'/g · '+(grams>0?fmtCash(value):'NO STOCK')+'</em></div><strong>SELL</strong></button>'; });
+  html+='</div><div class="market-assets"><h3>Asset exchange</h3><button class="btn-ghost" onclick="sellCrate()">📦 Sell 1 crate · '+fmtCash(2500)+'</button><button class="btn-ghost" onclick="liquidateDuplicates()">🗃️ Sell duplicate collectibles</button></div>';
+  html+='<div class="economy-ledger"><div><span>💵 CASH</span><b>'+fmtCash(G.save.cash)+'</b></div><div><span>📦 INVENTORY</span><b>'+fmtW(G.save.melons)+'</b></div><div><span>🏭 ALL ASSETS</span><b>'+fmtCash(buildingAssetValue()+otherAssetValue())+'</b></div><div><span>🏆 NET WORTH</span><b>'+fmtCash(worth)+'</b></div></div>';
+  wrap.innerHTML=html;
+}
+function sellProduct(channel){
+  const c=MARKET_CHANNELS[channel]; if(!c||G.save.melons<=0){ toast('No product available to sell.','📦'); return; }
+  const grams=Math.min(G.save.melons,c.cap), price=Math.round(marketPrice()*c.mult), proceeds=Math.floor(grams*price);
+  G.save.melons=Math.max(0,G.save.melons-grams); addCash(proceeds,true); gainXp(Math.max(1,Math.floor(Math.log10(proceeds+1)*2)));
+  toast('Sold '+fmtW(grams)+' through '+c.name+' · '+fmtCash(proceeds),'💵'); beepBuy(); renderMarketplace(); updateStats(); saveGame();
+  Leaderboard&&Leaderboard.bump&&Leaderboard.bump();
+}
+function sellCrate(){
+  if(G.save.inv<=0){ toast('No crates available to sell.','📦'); return; }
+  G.save.inv--; addCash(2500,true); toast('Crate sold for $2,500.','📦'); updateCrateButtons(); renderMarketplace(); refreshHud(); saveGame();
+  Leaderboard&&Leaderboard.bump&&Leaderboard.bump();
+}
+function liquidateDuplicates(){
+  let copies=0,value=0;
+  ITEMS.forEach(item=>{ const count=G.save.coll[item.id]||0; if(count>1){ const sold=count-1; copies+=sold; value+=sold*RARITY[item.r].v*750; G.save.coll[item.id]=1; } });
+  if(!copies){ toast('No duplicate collectibles to sell.','🗃️'); return; }
+  addCash(value,true); toast('Sold '+copies+' duplicates for '+fmtCash(value)+'.','🗃️'); renderMarketplace(); refreshHud(); saveGame();
+  Leaderboard&&Leaderboard.bump&&Leaderboard.bump();
+}
+window.sellProduct=sellProduct; window.sellCrate=sellCrate; window.liquidateDuplicates=liquidateDuplicates;
 
 /* ---------------- ascension / prestige ---------------- */
 
@@ -876,7 +974,7 @@ function renderRebuild(){
     '<div class="ah-big">🗝️ '+fmt(G.save.seeds)+' connections</div>'+
     '<div class="ah-gain">Rebuild grants <b>'+fmt(gain)+'</b> connections · each +'+(1+level('as1'))+'% production</div>'+
     '<button onclick="openRebuildConfirm()">⭐ REBUILD</button>'+
-    '<div class="ah-hint">Resets product, operations &amp; upgrades — keeps connections, crystals, levels, cartel &amp; collection.</div>'+
+    '<div class="ah-hint">Resets cash, product, operations &amp; upgrades — keeps connections, crystals, levels, cartel &amp; collection.</div>'+
     '<div class="ah-hint">Rebuild skins: ⭐ '+(G.save.ascensions>=3?'unlocked':'3 rebuilds')+' · ✨ 10 rebuilds · 🕳️ 25 rebuilds</div></div>'+
     '<div class="ascend-note">Permanent upgrades — bought with 🗝️ connections:</div>';
   ASC_UP.forEach(a=>{
@@ -902,14 +1000,14 @@ function buyAsc(id){
 }
 function openRebuildConfirm(){
   const gain=calcSeedGain();
-  if(gain<1){ toast('Keep packaging! ~10M product this run unlocks rebuild.','🗝️'); return; }
+  if(gain<1){ toast('Build a $500K run economy to unlock rebuild. Sell product in the marketplace.','🗝️'); return; }
   $('ascGainN').textContent=fmt(gain);
   openModal('veilRebuild');
 }
 function doRebuild(){
   const gain=calcSeedGain(); if(gain<1){ closeModal('veilRebuild'); return; }
-  G.save.seeds+=gain; G.save.totalSeeds+=gain; G.save.ascensions++;
-  G.save.melons=0; G.save.runEarned=0; G.save.buildings={}; G.save.upgrades=[]; G.save.totalClicks=0;
+  G.save.seeds=Math.min(1000000,G.save.seeds+gain); G.save.totalSeeds=Math.min(1000000,G.save.totalSeeds+gain); G.save.ascensions++;
+  G.save.melons=0; G.save.cash=0; G.save.runEarned=0; G.save.runCashEarned=0; G.save.buildings={}; G.save.upgrades=[]; G.save.totalClicks=0;
   G.combo=0;
   if(level('as7')>0) G.save.buildings.vine=25;
   addCrystals(2*level('as12'));
@@ -1029,8 +1127,8 @@ function renderRankCard(){
   const r=rankInfo();
   $('rankIcon').textContent=r.emoji;
   $('rankTitle').textContent=r.name+' · Lv '+G.save.level;
-  $('rankBar').style.width=xpPct()+'%';
-  $('rankNext').textContent='Lv '+(G.save.level+1)+' · '+fmt(xpNeed(G.save.level)-G.save.xp)+' xp to go';
+  $('rankBar').style.width=r.pct+'%';
+  $('rankNext').textContent=r.hasNext?r.nextName+' · '+fmtCash(r.next)+' required':'Maximum net-worth rank';
 }
 function renderDaily(){
   const btn=$('dailyBtn');
@@ -1605,13 +1703,13 @@ function updateStats(){
   updateComboUI(); updateBoostPill(); updateBuildings(); refreshHud();
 }
 function renderAll(){
-  renderBuildings(); renderCartel(); renderUpgrades(); renderRebuild(); renderShop();
+  renderBuildings(); renderCartel(); renderUpgrades(); renderMarketplace(); renderRebuild(); renderShop();
   renderAchievements(); renderRankCard(); renderDaily(); updateStats();
   renderQuestTab(); renderCollection(); renderInventory();
   checkAchievements();
 }
 function reRenderPanels(){
-  renderUpgrades(); renderRebuild(); renderShop();
+  renderUpgrades(); renderMarketplace(); renderRebuild(); renderShop();
   if(document.querySelector('#tab-cartel.on')) renderCartel();
 }
 
@@ -1947,6 +2045,20 @@ function bossTick(){
 function openTutorial(){ openModal('veilTutorial'); }
 function closeTutorial(){ closeModal('veilTutorial'); }
 
+/* ---------------- live build updates ---------------- */
+
+let updateReloading=false;
+async function checkForBuildUpdate(){
+  if(updateReloading) return;
+  try{
+    const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}); if(!r.ok) return;
+    const data=await r.json(); if(!data.version||data.version===BUILD_VERSION) return;
+    updateReloading=true; toast('New build v'+data.version+' ready — updating automatically…','🔄'); saveGame();
+    setTimeout(()=>{ const url=new URL(location.href); url.searchParams.set('build',data.build||data.version); location.replace(url.toString()); },2500);
+  }catch(e){}
+}
+function initLiveUpdates(){ $('buildVersion')&&($('buildVersion').textContent='v'+BUILD_VERSION); setTimeout(checkForBuildUpdate,8000); setInterval(checkForBuildUpdate,60000); }
+
 /* ---------------- main loop ---------------- */
 
 function tick(){
@@ -2005,6 +2117,7 @@ function startGame(){
   initBalloon();
   initSafehouse();
   initMoneyWash();
+  initLiveUpdates();
   renderAll();
   scheduleGolden(25000);
   postBoot();

@@ -14,7 +14,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💵</text></svg>">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="style.css?v=20260816b">
+<link rel="stylesheet" href="style.css?v=20260816d">
 </head>
 <body data-view="grow">
 
@@ -24,7 +24,7 @@
 
 <!-- ======= TOP BAR ======= -->
 <header id="topbar">
-  <div class="logo" onclick="openNameModal()">💵 <span>NARCOS</span><b>EMPIRE</b><em>drug empire idle</em></div>
+  <div class="logo" onclick="openNameModal()">💵 <span>NARCOS</span><b>EMPIRE</b><small class="build-badge" id="buildVersion">v4.0.0</small><em>drug empire idle</em></div>
   <div class="hud">
     <button class="chip name-chip" id="btnName" onclick="openNameModal()">
       <span class="chip-emoji" id="hudAvatar">💵</span><span id="hudName">BOSS</span>
@@ -35,6 +35,9 @@
     </button>
     <button class="chip" title="Connections (Rebuild)" onclick="setView('grow');switchGrowTab('ascend')">
       <span class="chip-emoji">🗝️</span><span id="hudSeeds">0</span>
+    </button>
+    <button class="chip cash-chip" title="Cash balance" onclick="setView('grow');switchGrowTab('market')">
+      <span class="chip-emoji">💵</span><span id="hudCash">$0</span>
     </button>
     <button class="chip" id="hudCrates" title="Crates to open" onclick="setView('quests')">
       <span class="chip-emoji">📦</span><span id="hudCrateN">0</span>
@@ -74,7 +77,7 @@
       <button class="map-node node-city" onclick="openMapRoute('quests')"><span>🎯</span><b>MEDELLÍN</b><small>Contracts</small></button>
       <button class="map-node node-port" onclick="openMapRoute('board')"><span>⚓</span><b>THE PORT</b><small>Raids</small></button>
       <button class="map-node node-compound" onclick="openMapRoute('grow','cartel')"><span>🏴</span><b>COMPOUND</b><small>Cartel</small></button>
-      <button class="map-node node-market" onclick="openMapRoute('grow','shop')"><span>💎</span><b>BLACK MARKET</b><small>Upgrades</small></button>
+      <button class="map-node node-market" onclick="openMapRoute('grow','market')"><span>💵</span><b>MARKETPLACE</b><small>Sell product</small></button>
 
     <div class="melon-stage">
       <div class="boost-pill" id="boostPill" style="display:none"></div>
@@ -108,7 +111,7 @@
     </div>
 
     <div class="stats">
-      <span class="eyebrow">AVAILABLE CASH</span>
+      <span class="eyebrow">PRODUCT INVENTORY</span>
       <div class="big-number" id="melonCount">0</div>
       <div class="substats">
         <span class="substat">⚡ <b id="perSec">0</b>/s</span>
@@ -143,6 +146,7 @@
       <button data-tab="farm" class="on">🧺 Operations</button>
       <button data-tab="cartel">🏴 Cartel</button>
       <button data-tab="upgrades">🔧 Upgrades</button>
+      <button data-tab="market">💵 Marketplace</button>
       <button data-tab="ascend">⭐ Rebuild</button>
       <button data-tab="shop">💎 Shop</button>
     </nav>
@@ -162,6 +166,7 @@
       </div>
       <div id="tab-cartel" class="tab"></div>
       <div id="tab-upgrades" class="tab"></div>
+      <div id="tab-market" class="tab"></div>
       <div id="tab-ascend" class="tab"></div>
       <div id="tab-shop" class="tab"></div>
     </div>
@@ -350,8 +355,8 @@
   <!-- ===== BOARD ===== -->
   <section id="view-board" class="view">
     <div class="view-head">
-      <h2>🏆 Global Cartel Board</h2>
-      <p>Live board — updated in real time from the shared underworld. Build your empire to climb the stack!</p>
+      <h2>🏆 Global Net Worth Board</h2>
+      <p>Live rankings by total net worth: cash, product inventory, operations, crystals and connections. Scores are capped below $1 trillion.</p>
     </div>
     <div class="rank-card" id="rankCard">
       <div class="rank-icon" id="rankIcon">🐀</div>
@@ -584,13 +589,13 @@
   </div>
 </div>
 
-<div class="modal-veil hidden" id="veilAscend">
+<div class="modal-veil hidden" id="veilRebuild">
   <div class="modal">
     <div class="modal-emoji">🗝️</div>
     <h1>Rebuild the Empire?</h1>
-    <p class="modal-sub">You will gain <b id="ascGainN">0</b> 🗝️ connections.<br>Connections give <b>+1%</b> permanent production each (upgradeable).<br>Your product, operations &amp; upgrades reset — achievements, crystals, levels &amp; lifetime product stay!</p>
+    <p class="modal-sub">You will gain <b id="ascGainN">0</b> 🗝️ connections.<br>Connections give permanent production and net-worth value.<br>Your cash, product, operations &amp; upgrades reset — achievements, crystals, levels, cartel and collection stay!</p>
     <div class="modal-actions">
-      <button class="btn-ghost" onclick="closeModal('veilAscend')">Not yet</button>
+      <button class="btn-ghost" onclick="closeModal('veilRebuild')">Not yet</button>
       <button class="btn-primary" onclick="doRebuild()">⭐ REBUILD</button>
     </div>
   </div>
@@ -629,8 +634,8 @@
 
 <script src="fishing.js?v=20260812a"></script>
 <script src="pvp.js?v=20260812a"></script>
-<script src="game.js?v=20260816c"></script>
-<script src="leaderboard.js?v=20260812a"></script>
+<script src="game.js?v=20260816d"></script>
+<script src="leaderboard.js?v=20260816d"></script>
 <script src="chat.js?v=20260812a"></script>
 <script src="suika.js?v=20260812a"></script>
 </body>
