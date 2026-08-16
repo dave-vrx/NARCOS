@@ -1180,7 +1180,7 @@ function dropCrate(n){
   G.save.inv+=n;
   toast('You found '+(n>1?n+' ':'a ')+'crate'+(n>1?'s':'')+'! 📦','🎁');
   $('hudCrateN').textContent=G.save.inv;
-  const btn=$('openCrateBtn'); if(btn) btn.textContent='Open a crate ('+G.save.inv+')';
+  updateCrateButtons();
 }
 function dropCrateChance(p){
   if(Math.random()<p*Math.pow(2,shopLvl('sh7'))) dropCrate(1);
@@ -1192,11 +1192,18 @@ function pickItem(){
   const pool=ITEMS.filter(i=>i.r===chosen);
   return pool[Math.floor(Math.random()*pool.length)];
 }
+function updateCrateButtons(){
+  const btn=$('openCrateBtn'), allBtn=$('openAllCratesBtn');
+  if(btn) btn.textContent='Open a crate ('+G.save.inv+')';
+  if(allBtn){
+    allBtn.textContent='Open all ('+G.save.inv+')';
+    allBtn.disabled=G.save.inv<=0;
+  }
+}
 function openCrate(){
-  const btn=$('openCrateBtn');
   if(G.save.inv<=0){ toast('No crates yet! Keep tapping.','📦'); return; }
   G.save.inv--; G.save.cratesOpened++;
-  if(btn) btn.textContent='Open a crate ('+G.save.inv+')';
+  updateCrateButtons();
   const item=pickItem(), rar=RARITY[item.r];
   const had=G.save.coll[item.id];
   if(had){ G.save.coll[item.id]=had+1; addCrystals(rar.v); }
@@ -1207,6 +1214,31 @@ function openCrate(){
   $('crateAgain').style.display=G.save.inv>0?'':'none';
   openModal('veilCrate');
   beepAch(); refreshHud(); gainXp(5);
+  renderCollection(); renderInventory(); checkAchievements();
+  Leaderboard&&Leaderboard.bump&&Leaderboard.bump();
+}
+function openAllCrates(){
+  const count=G.save.inv;
+  if(count<=0){ toast('No crates yet! Keep tapping.','📦'); return; }
+  let newItems=0, duplicates=0, crystals=0;
+  const rarities={};
+  for(let i=0;i<count;i++){
+    const item=pickItem(), rar=RARITY[item.r], had=G.save.coll[item.id];
+    rarities[item.r]=(rarities[item.r]||0)+1;
+    if(had){ G.save.coll[item.id]=had+1; duplicates++; crystals+=rar.v; }
+    else { G.save.coll[item.id]=1; newItems++; }
+  }
+  G.save.inv=0;
+  G.save.cratesOpened+=count;
+  addCrystals(crystals);
+  updateCrateButtons();
+  $('crateEmoji').textContent='📦';
+  $('crateName').textContent='Opened '+count+' crate'+(count===1?'':'s')+'!';
+  const raritySummary=Object.keys(RARITY).filter(r=>rarities[r]).map(r=>'<span style="color:'+RARITY[r].c+'">'+rarities[r]+' '+r+'</span>').join(' · ');
+  $('crateMsg').innerHTML='<b>'+newItems+' new</b> · '+duplicates+' duplicate'+(duplicates===1?'':'s')+(crystals?'<br>Duplicates converted to <b>+'+crystals+' 💎</b>':'')+'<br>'+raritySummary;
+  $('crateAgain').style.display='none';
+  openModal('veilCrate');
+  beepAch(); refreshHud(); gainXp(5*count);
   renderCollection(); renderInventory(); checkAchievements();
   Leaderboard&&Leaderboard.bump&&Leaderboard.bump();
 }
@@ -1229,8 +1261,7 @@ function renderCollection(){
 function renderInventory(){
   const list=$('invList');
   if(!list||document.body.dataset.view!=='quests') return;
-  const btn=$('openCrateBtn');
-  if(btn) btn.textContent='Open a crate ('+G.save.inv+')';
+  updateCrateButtons();
   const recent=G.save.recentDrops||[];
   if(!recent.length&&!G.save.inv){ list.innerHTML='<div class="lb-empty">No crates yet — they drop from clicks, buys &amp; mini games!</div>'; return; }
   list.innerHTML='<div class="inv-row"><div class="i-emoji">📦</div><div class="i-name">Crates ready to open</div><div class="i-val">×'+G.save.inv+'</div></div>';
